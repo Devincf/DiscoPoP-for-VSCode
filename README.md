@@ -42,6 +42,10 @@ Removed debug stuff - oops
 ### 0.1.4
 Minor fix
 
+### 0.1.5
+- Decreased minimum VS Code version to 1.50.0
+- Added "DiscoPoP: " as a prefix to all commands
+
 -----------------------------------------------------------------------------------------------------------
 
 **Enjoy!**
