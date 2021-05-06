@@ -30,6 +30,12 @@ This extension contributes the following settings:
 ### 0.1.0
 First proof of concept version which only features simple automation
 
+### 0.1.1
+Fixed small config path bug where it couldnt find the file if you didnt provide a trailing backslash
+
+### 0.1.2
+Fixed regex match. Now matches the exact filenames
+
 -----------------------------------------------------------------------------------------------------------
 
 **Enjoy!**

@@ -75,8 +75,10 @@ export function activate(context: vscode.ExtensionContext) {
 				console.log(files);
 				files.forEach(async (file, index) => {
 					console.log(`CU Generation for file (${index}) ${file}`);
-					let re = new RegExp(folderPath + "\/(.*).");
+					let re = new RegExp(folderPath + "\/(.*)[\.]");
 					const outFileName = file.match(re)![1];
+					console.log(file.match(re));
+					return;
 					await exec(`${vscode.workspace.getConfiguration("discopopvsc").get("clang")} -g -O0 -fno-discard-value-names -Xclang -load -Xclang ${buildPath}/libi/LLVMCUGeneration.so -mllvm -fm-path -mllvm ./FileMapping.txt -c ${file} -o ${outFileName}`, { cwd: folderPath }, (error, stdout, stderr) => {
 						if (error) {
 							vscode.window.showErrorMessage(`Error generating CU for file ${outFileName}`);
