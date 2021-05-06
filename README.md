@@ -36,6 +36,9 @@ Fixed small config path bug where it couldnt find the file if you didnt provide 
 ### 0.1.2
 Fixed regex match. Now matches the exact filenames
 
+### 0.1.3
+Removed debug stuff - oops
+
 -----------------------------------------------------------------------------------------------------------
 
 **Enjoy!**
