@@ -4,7 +4,7 @@
 	"description": "VSCode extension for DiscoPoP",
 	"version": "0.1.4",
 	"engines": {
-		"vscode": "^1.55.0"
+		"vscode": "^1.50.0"
 	},
 	"publisher":"devincfirat",
 	"categories": [
@@ -27,27 +27,27 @@
 		"commands": [
 			{
 				"command": "discopopvsc.helloWorld",
-				"title": "Hello World"
+				"title": "DiscoPoP: Hello World"
 			},
 			{
 				"command": "discopopvsc.fmap",
-				"title": "File Mapping"
+				"title": "DiscoPoP: File Mapping"
 			},
 			{
 				"command": "discopopvsc.cugen",
-				"title": "CU generation"
+				"title": "DiscoPoP: CU generation"
 			},
 			{
 				"command": "discopopvsc.dependprof",
-				"title": "Dependence profiling"
+				"title": "DiscoPoP: Dependence profiling"
 			},
 			{
 				"command": "discopopvsc.idredop",
-				"title": "Identifying reduction operations"
+				"title": "DiscoPoP: Identifying reduction operations"
 			},
 			{
 				"command": "discopopvsc.patid",
-				"title": "Pattern identfication"
+				"title": "DiscoPoP: (NOT IMPLEMENTED)Pattern identfication"
 			}
 		],
 		"configuration": {
