@@ -108,7 +108,7 @@ export function activate(context: vscode.ExtensionContext) {
 			console.log(files);
 			files.forEach(async (file, index) => {
 				console.log(`Dependency Profiling for file (${index}) ${file}`);
-				let re = new RegExp(folderPath + "\/(.*).");
+				let re = new RegExp(folderPath + "\/(.*)[\.]");
 				const outFileName = file.match(re)![1];
 				exec(`${vscode.workspace.getConfiguration("discopopvsc").get("clang")} -g -O0 -S -emit-llvm -fno-discard-value-names -Xclang -load -Xclang ${buildPath}/libi/LLVMDPInstrumentation.so -mllvm -fm-path -mllvm ./FileMapping.txt -o ${outFileName}_dp.ll ${file}`, { cwd: folderPath }, (error, stdout, stderr) => {
 					if (error) {
@@ -162,7 +162,7 @@ export function activate(context: vscode.ExtensionContext) {
 			console.log(files);
 			files.forEach(async (file, index) => {
 				console.log(`Identifying reduction operations for file (${index}) ${file}`);
-				let re = new RegExp(folderPath + "\/(.*).");
+				let re = new RegExp(folderPath + "\/(.*)[\.]");
 				const outFileName = file.match(re)![1];
 				exec(`${vscode.workspace.getConfiguration("discopopvsc").get("clang")} -g -O0 -S -emit-llvm -fno-discard-value-names -Xclang -load -Xclang ${buildPath}/libi/LLVMDPReduction.so -mllvm -fm-path -mllvm ./FileMapping.txt -o ${outFileName}_red.bc ${file}`, { cwd: folderPath }, (error, stdout, stderr) => {
 					if (error) {
