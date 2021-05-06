@@ -28,34 +28,36 @@ export function activate(context: vscode.ExtensionContext) {
 
 	let fmapCommand = vscode.commands.registerCommand('discopopvsc.fmap', () => {
 		//copy from scripts to folder
-		console.log();
+		console.log("Filemapping");
 		const dpfmapPath = `${vscode.workspace.getConfiguration("discopopvsc").get("path")}/${vscode.workspace.getConfiguration("discopopvsc").get("scripts_folder")}/dp-fmap`;
 
 		//const folderPath = vscode.workspace.workspaceFolders![0].uri.path; //TODO: think about how to properly do this
 		fs.stat(dpfmapPath, (err, stats) => {
-			if (!err) {
-				fs.copyFile(dpfmapPath, folderPath + '/dp-fmap', () => {
-					//execute
-					exec('./dp-fmap', { cwd: folderPath }, (error, stdout, stderr) => {
-						if (error) {
-							vscode.window.showErrorMessage('Error creating File Mapping');
-							console.log(`error: ${error.message}`);
-							return;
-						}
-						if (stderr) {
-							vscode.window.showErrorMessage('Error creating File Mapping');
-							console.log(`stderr: ${stderr}`);
-							return;
-						}
-						vscode.window.showInformationMessage('File Mapping created successfully');
-					});
-				});
+			if (err) {
+				vscode.window.showErrorMessage(`Error creating File Mapping. dp-fmap file not found in path ${dpfmapPath}`);
+				return;
 			}
+			fs.copyFile(dpfmapPath, folderPath + '/dp-fmap', () => {
+				//execute
+				exec('./dp-fmap', { cwd: folderPath }, (error, stdout, stderr) => {
+					if (error) {
+						vscode.window.showErrorMessage('Error creating File Mapping');
+						console.log(`error: ${error.message}`);
+						return;
+					}
+					if (stderr) {
+						vscode.window.showErrorMessage('Error creating File Mapping');
+						console.log(`stderr: ${stderr}`);
+						return;
+					}
+					vscode.window.showInformationMessage('File Mapping created successfully');
+				});
+			});
 		});
 	});
 	context.subscriptions.push(fmapCommand);
 
-	const buildPath = `${vscode.workspace.getConfiguration("discopopvsc").get("path")}${vscode.workspace.getConfiguration("discopopvsc").get("build_folder")}`;
+	const buildPath = `${vscode.workspace.getConfiguration("discopopvsc").get("path")}/${vscode.workspace.getConfiguration("discopopvsc").get("build_folder")}/`;
 
 	let cugenCommand = vscode.commands.registerCommand('discopopvsc.cugen', () => {
 		//TODO: add include dir, and other options
