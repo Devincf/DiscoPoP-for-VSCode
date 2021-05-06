@@ -39,6 +39,9 @@ Fixed regex match. Now matches the exact filenames
 ### 0.1.3
 Removed debug stuff - oops
 
+### 0.1.4
+Minor fix
+
 -----------------------------------------------------------------------------------------------------------
 
 **Enjoy!**
