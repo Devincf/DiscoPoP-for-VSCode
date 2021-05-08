@@ -6,21 +6,22 @@
 	"engines": {
 		"vscode": "^1.50.0"
 	},
-	"publisher":"devincfirat",
+	"publisher": "devincfirat",
 	"categories": [
 		"Other"
 	],
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/Devincf/DiscoPoP-for-VSCode.git"
-	  },
+	},
 	"activationEvents": [
 		"onCommand:discopopvsc.helloWorld",
 		"onCommand:discopopvsc.fmap",
 		"onCommand:discopopvsc.cugen",
 		"onCommand:discopopvsc.dependprof",
 		"onCommand:discopopvsc.idredop",
-		"onCommand:discopopvsc.patid"
+		"onCommand:discopopvsc.patid",
+		"onView:discopop_view"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
@@ -35,21 +36,41 @@
 			},
 			{
 				"command": "discopopvsc.cugen",
-				"title": "DiscoPoP: CU generation"
+				"title": "DiscoPoP: CU Generation"
 			},
 			{
 				"command": "discopopvsc.dependprof",
-				"title": "DiscoPoP: Dependence profiling"
+				"title": "DiscoPoP: Dependence Profiling"
 			},
 			{
 				"command": "discopopvsc.idredop",
-				"title": "DiscoPoP: Identifying reduction operations"
+				"title": "DiscoPoP: Identifying Reduction Operations"
 			},
 			{
 				"command": "discopopvsc.patid",
 				"title": "DiscoPoP: (NOT IMPLEMENTED)Pattern identfication"
 			}
 		],
+		"viewsContainers": {
+			"activitybar": [
+				{
+					"id": "discopopview",
+					"title": "DiscoPoP View",
+					"icon": "media/discopop_icon.png"
+				}
+			]
+		},
+		"views": {
+			"discopopview": [
+				{
+					"id": "discopop_view",
+					"name": "DiscoPoP View",
+					"type": "webview",
+					"icon": "media/discopop_files.png",
+					"contextualTitle": "DiscoPoP View"
+				}
+			]
+		},
 		"configuration": {
 			"title": "DiscoPoP For VSCode",
 			"properties": {

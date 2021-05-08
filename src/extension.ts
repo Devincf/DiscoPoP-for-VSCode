@@ -2,7 +2,9 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 import * as fs from 'fs';
-import { exec, execSync } from 'child_process';
+import { exec } from 'child_process';
+
+import { DiscoPoPViewProvider } from './discopop_webview_provider';
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
@@ -23,8 +25,15 @@ export function activate(context: vscode.ExtensionContext) {
 	});
 
 	context.subscriptions.push(disposable);
-
 	const folderPath = vscode.workspace.workspaceFolders![0].uri.path; //TODO: think about how to properly do this
+
+	let filemapping = fs.readFileSync(folderPath + '/FileMapping.txt', 'utf8').split('\n').filter((el) => el !== '');
+	filemapping = filemapping.map(str => str.trim().substr(2));
+	vscode.window.registerWebviewViewProvider('discopop_view', new DiscoPoPViewProvider(folderPath, filemapping));
+
+
+	//vscode.window.registerWebviewViewProvider('discopoptasks',new DiscoPoPTasksProvider(context));
+
 
 	let fmapCommand = vscode.commands.registerCommand('discopopvsc.fmap', () => {
 		//copy from scripts to folder
