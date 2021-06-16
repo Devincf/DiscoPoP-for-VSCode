@@ -2,7 +2,7 @@
 	"name": "discopopvsc",
 	"displayName": "DiscoPoP for VSCode",
 	"description": "VSCode extension for DiscoPoP",
-	"version": "0.2.0",
+	"version": "0.3.0",
 	"engines": {
 		"vscode": "^1.50.0"
 	},
@@ -21,7 +21,8 @@
 		"onCommand:discopopvsc.dependprof",
 		"onCommand:discopopvsc.idredop",
 		"onCommand:discopopvsc.patid",
-		"onView:discopop_view"
+		"onView:discopop_view",
+		"*"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
@@ -79,14 +80,14 @@
 					"default": "",
 					"description": "Specifies the folder path containing DiscoPoP"
 				},
-				"discopopvsc.build_folder": {
+				"discopopvsc.build_path": {
 					"type": "string",
-					"default": "build",
+					"default": "/home/test/ba/discopop/build",
 					"description": "Specifies the name of the build folder"
 				},
-				"discopopvsc.scripts_folder": {
+				"discopopvsc.scripts_path": {
 					"type": "string",
-					"default": "scripts",
+					"default": "/home/test/ba/discopop/scripts",
 					"description": "Specifies the name of the scripts folder"
 				},
 				"discopopvsc.clang": {

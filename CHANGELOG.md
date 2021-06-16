@@ -29,3 +29,8 @@ Minor fix
 - Added DiscoPoP view on the left to manage the tasks
 - Made it possible to run multiple tasks at once
 - Made it possible to select which files you wish to run the task on
+
+
+### 0.3.0
+- scripts/build path can now be seperate
+- source folder doesn't get cluttered with temp files anymore

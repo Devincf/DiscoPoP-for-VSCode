@@ -48,6 +48,10 @@ This extension contributes the following settings:
 - Made it possible to run multiple tasks at once
 - Made it possible to select which files you wish to run the task on
 
+### 0.3.0
+- Changed build/scripts folder setting to build/scripts path
+- Analyzers now move all discopop temporary files to a subfolder called discopop-tmp
+
 -----------------------------------------------------------------------------------------------------------
 
 **Enjoy!**
