@@ -3,11 +3,12 @@ import * as fs from 'fs';
 
 import {exec} from 'child_process';
 import { DiscoPoPViewProvider } from '../discopop_webview_provider';
+import { createFolderIfNotExist } from '../misc/iomanip';
 
 export function executeFileMappingTask(discopopView: DiscoPoPViewProvider){
     	//copy from scripts to folder
 		console.log("Filemapping");
-		const dpfmapPath = `${vscode.workspace.getConfiguration("discopopvsc").get("path")}/${vscode.workspace.getConfiguration("discopopvsc").get("scripts_folder")}/dp-fmap`;
+		const dpfmapPath = `${vscode.workspace.getConfiguration("discopopvsc").get("scripts_path")}/dp-fmap`;
 
 		//const folderPath = vscode.workspace.workspaceFolders![0].uri.path; //TODO: think about how to properly do this
 		fs.stat(dpfmapPath, (err, stats) => {
@@ -28,6 +29,8 @@ export function executeFileMappingTask(discopopView: DiscoPoPViewProvider){
 						console.log(`stderr: ${stderr}`);
 						return;
 					}
+					createFolderIfNotExist(`${discopopView.folderPath}/discopop-tmp`);
+					fs.renameSync(`${discopopView.folderPath}/FileMapping.txt`, `${discopopView.folderPath}/discopop-tmp/FileMapping.txt`);
 					vscode.window.showInformationMessage('File Mapping created successfully');
 				});
 			});

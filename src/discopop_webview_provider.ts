@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import * as vscode from 'vscode';
-import { getFiles } from './misc/getFiles';
+import { getFiles } from './misc/iomanip';
 
 
 import { executeCUGenTask } from './tasks/task_cu_gen';
@@ -25,7 +25,7 @@ export class DiscoPoPViewProvider implements vscode.WebviewViewProvider {
       'Identifying Reduction Operations': executeRedOpTask
     };
     this.folderPath = vscode.workspace.workspaceFolders![0].uri.path; //TODO: think about how to properly do this    ;
-    this.buildPath = `${vscode.workspace.getConfiguration("discopopvsc").get("path")}/${vscode.workspace.getConfiguration("discopopvsc").get("build_folder")}/`;
+    this.buildPath = `${vscode.workspace.getConfiguration("discopopvsc").get("build_path")}/`;
 
 
     this.init = false;
