@@ -8,6 +8,9 @@ import { executeCUGenTask } from './tasks/task_cu_gen';
 import { executeDepProfTask } from './tasks/task_dep_prof';
 import { executeRedOpTask } from './tasks/task_red_op';
 
+import { SourceHighlighting } from './misc/source_highlighting';
+
+
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
@@ -26,12 +29,12 @@ export function activate(context: vscode.ExtensionContext) {
 		vscode.window.showInformationMessage('Hello World from DiscoPoP for VSCode!');
 	});
 
-	
+
 	context.subscriptions.push(disposable);
 	//const folderPath = vscode.workspace.workspaceFolders![0].uri.path; //TODO: think about how to properly do this
-	
-	
-	const viewProvider : DiscoPoPViewProvider = new DiscoPoPViewProvider();
+
+
+	const viewProvider: DiscoPoPViewProvider = new DiscoPoPViewProvider();
 
 	//let filemapping = fs.readFileSync(folderPath + '/FileMapping.txt', 'utf8').split('\n').filter((el) => el !== '');
 	//filemapping = filemapping.map(str => str.trim().substr(2));
@@ -70,7 +73,17 @@ export function activate(context: vscode.ExtensionContext) {
 
 	});
 
+	
+
+	const emojiDiagnostics = vscode.languages.createDiagnosticCollection("emoji");
+	context.subscriptions.push(emojiDiagnostics);
+
+	let sourceHighlighting = new SourceHighlighting();
+	sourceHighlighting.subscribeToDocumentChanges(context, emojiDiagnostics);
+	
 }
+
+
 
 // this method is called when your extension is deactivated
 export function deactivate() { }
