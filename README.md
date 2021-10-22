@@ -25,8 +25,8 @@ This extension contributes the following settings:
 
 - Compiler warnings sometimes get written to stderr which makes the extension think discopop failed.
 - Checkboxes reset every time you click on a different tab
-- Tasks fill up folder with 'clutter'. Will get moved to a seperate folder soon
-- Build/Script path cannot be outside of the discopop folder
+- When running the analysis and pattern identification on multiple files, the pattern identification sometimes fails and creates wrong highlights.
+- If VSCode is installed via a FlatPak the extension will not work correctly, since Flatpak has its own virtual environment with its own version of clang. However DiscoPoP required a very specific version of clang8
 
 ## Release Notes
 
@@ -51,6 +51,13 @@ This extension contributes the following settings:
 ### 0.3.0
 - Changed build/scripts folder setting to build/scripts path
 - Analyzers now move all discopop temporary files to a subfolder called discopop-tmp
+
+### 0.4.0
+- Added automatic file mapping
+- Added Pattern Identification
+- Added first version of text highlighting
+- Added first version of simple pragma insertion
+- Fixed multiple small bugs
 
 -----------------------------------------------------------------------------------------------------------
 

@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 
 import { exec } from 'child_process';
-import { DiscoPoPViewProvider } from '../discopop_webview_provider';
+import { DiscoPoPViewProvider } from '../newdiscopop_webview_provider';
 import { createFolderIfNotExist, getFiles } from '../misc/iomanip';
 
 export function executeRedOpTask(discopopView: DiscoPoPViewProvider, ifiles?: string[]) {
@@ -22,36 +22,48 @@ export function executeRedOpTask(discopopView: DiscoPoPViewProvider, ifiles?: st
 
         createFolderIfNotExist(`${discopopView.folderPath}/discopop-tmp`);
 
-        exec(`${clang} -g -O0 -S -emit-llvm -fno-discard-value-names -Xclang -load -Xclang ${discopopView.buildPath}/libi/LLVMDPReduction.so -mllvm -fm-path -mllvm ./FileMapping.txt -o ${outFileName}_red.bc ${file}`, { cwd: discopopView.folderPath + '/discopop-tmp' }, (error, stdout, stderr) => {
+        const execStr = `${clang} -g -O0 -S -emit-llvm -fno-discard-value-names -Xclang -load -Xclang ${discopopView.buildPath}/libi/LLVMDPReduction.so -mllvm -fm-path -mllvm ./FileMapping.txt -o ${outFileName}_red.bc ${file}`;
+        console.log(execStr);
+        exec(execStr, { cwd: discopopView.folderPath + '/discopop-tmp' }, (error, stdout, stderr) => {
             if (error) {
                 vscode.window.showErrorMessage(`Error during step 1 of identifying reduction operations in file ${outFileName}`);
                 console.log(`error: ${error.message}`);
+                discopopView.stages[0]['id_red_ops'] = 1;
                 return;
             }
-            exec(`${clang} ${outFileName}_red.bc -o ${outFileName}_dp_run_red -L${discopopView.buildPath}/rtlib -lDiscoPoP_RT -lpthread`, { cwd: discopopView.folderPath + '/discopop-tmp' }, (error, stdout, stderr) => {
+            const execStr = `${clang} ${outFileName}_red.bc -o ${outFileName}_dp_run_red -L${discopopView.buildPath}/rtlib -lDiscoPoP_RT -lpthread`;
+            console.log(execStr);
+            exec(execStr, { cwd: discopopView.folderPath + '/discopop-tmp' }, (error, stdout, stderr) => {
                 if (error) {
                     vscode.window.showErrorMessage(`Error during step 2 of identifying reduction operations in file ${outFileName}`);
                     console.log(`error: ${error.message}`);
+                    discopopView.stages[0]['id_red_ops'] = 1;
                     return;
                 }
                 if (stderr) {
                     vscode.window.showErrorMessage(`(std)Error during step 2 of identifying reduction operations in file ${outFileName}`);
                     console.log(`stderr: ${stderr}`);
+                    discopopView.stages[0]['id_red_ops'] = 1;
                     return;
                 }
-                exec(`./${outFileName}_dp_run_red`, { cwd: discopopView.folderPath + '/discopop-tmp' }, (error, stdout, stderr) => {
+                const execStr = `./${outFileName}_dp_run_red`;
+                console.log(execStr);
+                exec(execStr, { cwd: discopopView.folderPath + '/discopop-tmp' }, (error, stdout, stderr) => {
                     if (error) {
                         vscode.window.showErrorMessage(`Error during step 3 of identifying reduction operations in file ${outFileName}`);
                         console.log(`error: ${error.message}`);
+                        discopopView.stages[0]['id_red_ops'] = 1;
                         return;
                     }
                     if (stderr) {
                         vscode.window.showErrorMessage(`(std)Error during step 3 of identifying reduction operations in file ${outFileName}`);
                         console.log(`stderr: ${stderr}`);
+                        discopopView.stages[0]['id_red_ops'] = 1;
                         return;
                     }
                 });
                 vscode.window.showInformationMessage('Finished identifying reduction operations');
+                discopopView.stages[0]['id_red_ops'] = 2;
             });
         });
     });

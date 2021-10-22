@@ -2,10 +2,10 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 
 import {exec} from 'child_process';
-import { DiscoPoPViewProvider } from '../discopop_webview_provider';
+import { DiscoPoPViewProvider } from '../newdiscopop_webview_provider';
 import { createFolderIfNotExist } from '../misc/iomanip';
 
-export function executeFileMappingTask(discopopView: DiscoPoPViewProvider){
+export function executeFileMappingTask(discopopView: DiscoPoPViewProvider, showMessage: boolean = true){
     	//copy from scripts to folder
 		console.log("Filemapping");
 		const dpfmapPath = `${vscode.workspace.getConfiguration("discopopvsc").get("scripts_path")}/dp-fmap`;
@@ -18,6 +18,8 @@ export function executeFileMappingTask(discopopView: DiscoPoPViewProvider){
 			}
 			fs.copyFile(dpfmapPath, discopopView.folderPath + '/dp-fmap', () => {
 				//execute
+				const execStr =  './dp-fmap';
+				console.log(execStr);
 				exec('./dp-fmap', { cwd: discopopView.folderPath }, (error, stdout, stderr) => {
 					if (error) {
 						vscode.window.showErrorMessage('Error creating File Mapping');
@@ -31,7 +33,9 @@ export function executeFileMappingTask(discopopView: DiscoPoPViewProvider){
 					}
 					createFolderIfNotExist(`${discopopView.folderPath}/discopop-tmp`);
 					fs.renameSync(`${discopopView.folderPath}/FileMapping.txt`, `${discopopView.folderPath}/discopop-tmp/FileMapping.txt`);
-					vscode.window.showInformationMessage('File Mapping created successfully');
+					if(showMessage){
+						vscode.window.showInformationMessage('File Mapping created successfully');
+					}
 				});
 			});
 		});

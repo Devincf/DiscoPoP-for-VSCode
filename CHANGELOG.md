@@ -34,3 +34,11 @@ Minor fix
 ### 0.3.0
 - scripts/build path can now be seperate
 - source folder doesn't get cluttered with temp files anymore
+
+### 0.4.0
+- filemapping task now runs every 5s in the background
+- Added the ability to run the pattern identification task
+- Added potential parallelism text highlighting, for all file that previously had the pattern identification task executed
+- Added auto code insertion for all potential parallelism highlights.
+- Fixed a bug where you could only run tasks on 1 file
+- Fixed a bug where the extension would sometimes not load properly

@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 
 import { exec } from 'child_process';
-import { DiscoPoPViewProvider } from '../discopop_webview_provider';
+import { DiscoPoPViewProvider } from '../newdiscopop_webview_provider';
 import { createFolderIfNotExist, getFiles } from '../misc/iomanip';
 
 export function executeCUGenTask(discopopView: DiscoPoPViewProvider, ifiles?: string[]) {
@@ -23,13 +23,17 @@ export function executeCUGenTask(discopopView: DiscoPoPViewProvider, ifiles?: st
         console.log(file.match(re));
         
         createFolderIfNotExist(`${discopopView.folderPath}/discopop-tmp`);
-        exec(`${clang} -g -O0 -fno-discard-value-names -Xclang -load -Xclang ${discopopView.buildPath}/libi/LLVMCUGeneration.so -mllvm -fm-path -mllvm ./FileMapping.txt -c ${file} -o ${outFileName}`, { cwd: discopopView.folderPath + '/discopop-tmp' }, (error, stdout, stderr) => {
+        const execStr = `${clang} -g -O0 -fno-discard-value-names -Xclang -load -Xclang ${discopopView.buildPath}/libi/LLVMCUGeneration.so -mllvm -fm-path -mllvm ./FileMapping.txt -c ${file} -o ${outFileName}`;
+        console.log(execStr);
+        exec(execStr, { cwd: discopopView.folderPath + '/discopop-tmp' }, (error, stdout, stderr) => {
             if (error) {
                 vscode.window.showErrorMessage(`Error generating CU for file ${outFileName}`);
                 console.log(`error: ${error.message}`);
+                discopopView.stages[0]['cu_gen'] = 1;
                 return;
             }
             vscode.window.showInformationMessage('Finished CU Generation');
+            discopopView.stages[0]['cu_gen'] = 2;
         });
     });
 }
