@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import * as vscode from 'vscode';
-import { getFiles } from './misc/iomanip';
+import { getAllFilesInFolderWithPattern, getFiles } from './misc/iomanip';
 import { SourceHighlighting } from './misc/source_highlighting';
 
 
@@ -18,6 +18,8 @@ export class DiscoPoPViewProvider implements vscode.WebviewViewProvider {
   currentStage: number = 0;
   stages: any[] = [];
 
+  useMakefile: boolean = false;
+
 
   init: boolean;
   webview: vscode.WebviewView | undefined;
@@ -34,6 +36,8 @@ export class DiscoPoPViewProvider implements vscode.WebviewViewProvider {
 
     this.stages = [{ 'cu_gen': 0, 'dep_prof': 0, 'id_red_ops': 0 },{}, { 'id_patterns': 0 },{}];
 
+    //check for existing files for stages
+    
     this.taskMap = {
       'CU Generation': executeCUGenTask,
       'Dependence Profiling': executeDepProfTask,
@@ -42,8 +46,22 @@ export class DiscoPoPViewProvider implements vscode.WebviewViewProvider {
     this.folderPath = vscode.workspace.workspaceFolders![0].uri.path; //TODO: think about how to properly do this    ;
     this.buildPath = `${vscode.workspace.getConfiguration("discopopvsc").get("build_path")}/`;
     this.discopopPath = `${vscode.workspace.getConfiguration("discopopvsc").get("path")}`;
-
+    
     this.sourceHighlighting.setView(this);
+
+    if(getAllFilesInFolderWithPattern(this.folderPath + '/discopop-tmp', "(.*)dp.ll").length > 0){
+      this.stages[0]['dep_prof'] = 2;
+    }
+    if(getAllFilesInFolderWithPattern(this.folderPath + '/discopop-tmp', "(.*)Data.xml").length > 0){
+      this.stages[0]['cu_gen'] = 2;
+    }
+    if(getAllFilesInFolderWithPattern(this.folderPath + '/discopop-tmp', "(.*)red.bc").length > 0){
+      this.stages[0]['id_red_ops'] = 2;
+    }
+    
+    if(getAllFilesInFolderWithPattern(this.folderPath, "(.*)Makefile").length > 0){
+      this.useMakefile = true;
+    }
 
     this.init = false;
   }
@@ -75,7 +93,7 @@ export class DiscoPoPViewProvider implements vscode.WebviewViewProvider {
             }
           });*/
           const tempfiles = getFiles(this.folderPath).filter(file => file.endsWith('.c') || file.endsWith('.cpp') || file.endsWith('.cc'));
-          this.taskMap[message.task](this, tempfiles);
+          this.taskMap[message.task](this, tempfiles, this.useMakefile);
           this.lastFiles = tempfiles;
         }
         break;
@@ -83,9 +101,12 @@ export class DiscoPoPViewProvider implements vscode.WebviewViewProvider {
         {
           //const tempfiles = message.files.filter((m: any) => m.selected).map((m: any) => m.file.path);
           const tempfiles = getFiles(this.folderPath).filter(file => file.endsWith('.c') || file.endsWith('.cpp') || file.endsWith('.cc'));
-          executePatIdTask(this, tempfiles);
+          executePatIdTask(this, tempfiles, this.useMakefile);
           this.lastFiles = tempfiles;
           break;
+        }
+        case 'setUseMakefile':{
+          this.useMakefile = message.useMakefile;
         }
       case 'setStage':
         {
@@ -122,40 +143,42 @@ export class DiscoPoPViewProvider implements vscode.WebviewViewProvider {
   drawStageOne() {
     return `<div id="first-stage">
     <div id="extractdd-box" class="task-box multi-boxes task-box-active">
+    <span class="task-title">Extract Data Dependences</span> 
     <div class="task-completion ${this.getCompletionState(this.stages[0]['dep_prof'])}">
     
     </div>
-      <form action="/task/dd">
+      <form class="task-inside-box" action="/task/dd">
         <fieldset style="border:none;">
-          <input type="checkbox" name="method" value="Pure Dynamic">Pure Dynamic<br><br>
-          <input type="checkbox" name="method" value="Hybrid">Hybrid<br>
+          <input type="checkbox" name="method" value="Pure Dynamic" checked>Pure Dynamic<br><br>
+          <input type="checkbox" name="method" value="Hybrid" disabled>Hybrid<br>
           <br>
-          <input type="submit" value="Extract Data Dependences" onClick="startTask('Dependence Profiling')"/>
+          <input type="submit" value="Start" onClick="startTask('Dependence Profiling')"/>
         </fieldset>
       </form>
     </div>
     <div id="decompose-box" class="task-box multi-boxes task-box-active">
+    <span class="task-title">Decompose the Program</span> 
     <div class="task-completion ${this.getCompletionState(this.stages[0]['cu_gen'])}">
-    
     </div>
-      <form action="/task/decompose">
+    
+    <form class="task-inside-box" action="/task/decompose">
         <fieldset style="border:none;">
-          <input type="checkbox" name="method" value="Computational Units" checked> Computational Units<br>
+          <input type="checkbox" name="method" value="Computational Units" checked disabled> Computational Units<br>
           <br>
-          <input type="submit" value="Decompose the Program" onClick="startTask('CU Generation')" />
+          <input type="submit" value="Start" onClick="startTask('CU Generation')" />
         </fieldset>
       </form>
     </div>
 
     <div id="detectrp-box" class="task-box multi-boxes task-box-active">
-    <div class="task-completion ${this.getCompletionState(this.stages[0]['id_red_ops'])}">
     
+    <span class="task-title">Detect reduction patterns</span> 
+    <div class="task-completion ${this.getCompletionState(this.stages[0]['id_red_ops'])}">
     </div>
-      <form action="/task/detectrp">
+      <form class="task-inside-box" action="/task/detectrp">
         <fieldset style="border:none;">
-          <br><input type="checkbox" name="method" value="Reduction Operations" checked>Reduction Operations<br><br>
-          <br>
-          <input type="submit" value="Detect reduction pattern" onClick="startTask('Identifying Reduction Operations')" />
+        <input type="checkbox" name="method" value="Reduction Operations" checked disabled>Reduction Operations<br><br>
+          <input type="submit" value="Start" onClick="startTask('Identifying Reduction Operations')" />
         </fieldset>
       </form>
     </div>
@@ -165,13 +188,17 @@ export class DiscoPoPViewProvider implements vscode.WebviewViewProvider {
     return `
     <div id="second-stage">
         <div id="extractdd-box" class="task-box multi-boxes task-box-active">
+        <span class="task-title">Extract Data Dependences</span> 
         <div class="task-completion task-done">
-        
         </div>
+        
+        <br>
+        <br>
+        <br>
           <form action="/task/dd">
             <fieldset style="border:none;">
-              <input type="checkbox" name="task" value="Find unexecuted paths">Find unexecuted paths<br><br>
-              <input type="checkbox" name="task" value="Identify parallel patterns">Identify parallel patterns<br>
+              <input type="checkbox" name="task" value="Find unexecuted paths" checked>Find unexecuted paths<br><br>
+              <input type="checkbox" name="task" value="Identify parallel patterns" checked>Identify parallel patterns<br>
               <br>
               <input type="submit" value="Execute the tasks" />
             </fieldset>
@@ -183,14 +210,15 @@ export class DiscoPoPViewProvider implements vscode.WebviewViewProvider {
     return `
     <div id="third-stage">
         <div id="extractdd-box" class="task-box multi-boxes task-box-active">
+        <span class="task-title">Identify parallelization suggestions</span> 
         <div class="task-completion ${this.getCompletionState(this.stages[2]['id_patterns'])}">
         </div>
-          <form action="/task/dd">
+          <form class="task-inside-box" action="/task/dd">
             <fieldset style="border:none;">
-              <input type="checkbox" name="task" value="CPU">CPU<br><br>
-              <input type="checkbox" name="task" value="GPU">GPU<br>
+              <input type="checkbox" name="task" value="CPU" checked disabled>CPU<br><br>
+              <input type="checkbox" name="task" value="GPU" disabled>GPU<br>
               <br>
-              <input type="submit" value="Identify parallelization suggestions" onClick="identifyPatterns()"/>
+              <input type="submit" value="Start" onClick="identifyPatterns()"/>
             </fieldset>
           </form>
         </div>
@@ -206,8 +234,8 @@ export class DiscoPoPViewProvider implements vscode.WebviewViewProvider {
         </div>
           <form action="/task/dd">
             <fieldset style="border:none;">
-              <input type="checkbox" name="task" value="CPU">CPU<br><br>
-              <input type="checkbox" name="task" value="GPU">GPU<br>
+              <input type="checkbox" name="task" value="CPU" checked disabled>CPU<br><br>
+              <input type="checkbox" name="task" value="GPU" checked disabled>GPU<br>
               <br>
               <input type="submit" value="Rank patterns" />
             </fieldset>
@@ -262,6 +290,24 @@ export class DiscoPoPViewProvider implements vscode.WebviewViewProvider {
     border: 1px black solid;
     border-radius:5px;
     }
+
+    .task-inside-box{
+      padding:0px;
+      margin-top:15px;
+    }
+
+    .task-title{
+      padding-top:8px;
+      padding-left:5px;
+      font-family: Arial, Helvetica, sans-serif;
+font-size: 13px;
+color: #eee;
+display:inline-block;
+font-weight: 400;
+text-decoration: rgb(68, 68, 68);
+font-style: normal;
+width:160px;
+    }
     
     .task-completion{
       float:right;
@@ -307,21 +353,31 @@ export class DiscoPoPViewProvider implements vscode.WebviewViewProvider {
       margin: 4px 2px;
       cursor: pointer;
     }
+    
 </style>
 
 <div id="wrapper">
 <p id="current-status-label">
-Current Stage: ${this.currentStage}
-</p>
-<p id="current-information-label">
-Some information(not implemented)
-</p>
+Current Stage: ${this.currentStage+1}
+<select name="stages" id="stages" onchange="vscode.postMessage({command: 'setStage', stage: this.selectedIndex});">
+  <option ${this.currentStage === 0 ? 'selected' : ''} value="0">Stage One</option>
+  <option ${this.currentStage === 1 ? 'selected' : ''} value="1">Stage Two</option>
+</select>
+
+${getAllFilesInFolderWithPattern(this.folderPath, "Makefile").length>0? `<br><input id="makefilecheckbox" type="checkbox" name="useMakefile" value="useMakefile" onchange="vscode.postMessage({command: 'setUseMakefile', useMakefile: this.checked});" checked>Use Makefile<br>` : ''}
 
 ${this.drawCurrentStage()}
 ${this.currentStage !== 1 && Object.values(this.stages[this.currentStage]).every(task => task === 2) ? '<button type="button" class="button" onclick="goToNextStage()">Next Stage</button> ' : ''}
 </div>
 </body></html>`;
     //TODO: CHANGE CURRENT STAGE !== 1 TO 3
+
+    /*
+</p>
+<p id="current-information-label">
+Some information(not implemented)
+</p>
+    */
   }
 
   resolveWebviewView(webviewView: vscode.WebviewView, context: vscode.WebviewViewResolveContext<unknown>, token: vscode.CancellationToken): void | Thenable<void> {

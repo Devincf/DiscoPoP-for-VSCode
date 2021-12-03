@@ -5,9 +5,18 @@ import { exec } from 'child_process';
 import { DiscoPoPViewProvider } from '../newdiscopop_webview_provider';
 import { createFolderIfNotExist, getFiles } from '../misc/iomanip';
 
-export function executeCUGenTask(discopopView: DiscoPoPViewProvider, ifiles?: string[]) {
+export function executeCUGenTask(discopopView: DiscoPoPViewProvider, ifiles?: string[], useMakefile: boolean = false) {
     //copy from scripts to folder
-    console.log("executeCUGenTask");
+    console.log("executeCUGenTask");    
+    if (useMakefile) {
+        executeMakefile(discopopView);
+    } else {
+        executeNormal(discopopView, ifiles);
+    }
+    
+}
+
+function executeNormal(discopopView: DiscoPoPViewProvider, ifiles?: string[]) {
     let files: string[] = [];
     if (ifiles === undefined) {
         files = getFiles(discopopView.folderPath);
@@ -33,6 +42,20 @@ export function executeCUGenTask(discopopView: DiscoPoPViewProvider, ifiles?: st
                 return;
             }
             vscode.window.showInformationMessage('Finished CU Generation');
+            discopopView.stages[0]['cu_gen'] = 2;
+        });
+    });
+}
+
+function executeMakefile(discopopView: DiscoPoPViewProvider) {
+    const execStr = `python3 -m Makefile_Analyzer --target-project=${discopopView.folderPath} --target-makefile=${discopopView.folderPath}/Makefile --dp-path=${discopopView.discopopPath} --dp-build-path=${discopopView.buildPath} --exec-mode=cu_gen --clang-bin=clang-8 --clang++-bin=clang++-8 --llvm-link-bin=llvm-link-8`;
+    //TODO: REMOVE AFTER FIX
+
+    exec(execStr, { cwd: discopopView.discopopPath + "/discopop_makefile" }, (error, stdout, stderr) => {
+        //create highlight for each obj
+        const execStr = `make -f tmp_makefile.mk && ./out && cd ..`;
+        exec(execStr, { cwd: discopopView.folderPath }, (error, stdout, stderr) => {
+            vscode.window.showInformationMessage('Finished CU Generation using a Makefile');
             discopopView.stages[0]['cu_gen'] = 2;
         });
     });

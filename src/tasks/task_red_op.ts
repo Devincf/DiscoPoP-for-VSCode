@@ -5,9 +5,18 @@ import { exec } from 'child_process';
 import { DiscoPoPViewProvider } from '../newdiscopop_webview_provider';
 import { createFolderIfNotExist, getFiles } from '../misc/iomanip';
 
-export function executeRedOpTask(discopopView: DiscoPoPViewProvider, ifiles?: string[]) {
+export function executeRedOpTask(discopopView: DiscoPoPViewProvider, ifiles?: string[], useMakefile : boolean = false) {
     //copy from scripts to folder
     console.log("executeDepProfTask");
+    if (useMakefile) {
+        executeMakefile(discopopView);
+    } else {
+        executeNormal(discopopView, ifiles);
+    }
+    
+}
+
+function executeNormal(discopopView: DiscoPoPViewProvider, ifiles?: string[]) {
     let files: string[] = [];
     if (ifiles === undefined) {
         files = getFiles(discopopView.folderPath);
@@ -65,6 +74,20 @@ export function executeRedOpTask(discopopView: DiscoPoPViewProvider, ifiles?: st
                 vscode.window.showInformationMessage('Finished identifying reduction operations');
                 discopopView.stages[0]['id_red_ops'] = 2;
             });
+        });
+    });
+}
+
+function executeMakefile(discopopView: DiscoPoPViewProvider) {
+    const execStr = `python3 -m Makefile_Analyzer --target-project=${discopopView.folderPath} --target-makefile=${discopopView.folderPath}/Makefile --dp-path=${discopopView.discopopPath} --dp-build-path=${discopopView.buildPath} --exec-mode=dp_red --clang-bin=clang-8 --clang++-bin=clang++-8 --llvm-link-bin=llvm-link-8`;
+    //TODO: REMOVE AFTER FIX
+
+    exec(execStr, { cwd: discopopView.discopopPath + "/discopop_makefile" }, (error, stdout, stderr) => {
+        //create highlight for each obj
+        const execStr = `make -j7 f tmp_makefile.mk && ./out && cd ..`;
+        exec(execStr, { cwd: discopopView.folderPath }, (error, stdout, stderr) => {
+            vscode.window.showInformationMessage('Finished identifying reduction operations using a Makefile');
+            discopopView.stages[0]['id_red_ops'] = 2;
         });
     });
 }

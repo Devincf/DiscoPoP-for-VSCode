@@ -37,3 +37,10 @@ export function getAllPatternFiles(folderPath: string) {
   let re = new RegExp("(.*)_patterns.json");
   return files.filter(file => re.test(file)).map(file => file.match(re)![1]);
 }
+
+export function getAllFilesInFolderWithPattern(folderPath: string, pattern: string){
+
+  const files = readdirSync(folderPath);
+  let re = new RegExp(pattern);
+  return files.filter(file => re.test(file)).map(file => file.match(re)![1]);
+}
