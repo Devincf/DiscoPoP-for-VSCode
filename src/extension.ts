@@ -2,7 +2,7 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 
-import { DiscoPoPViewProvider } from './newdiscopop_webview_provider';
+import { DiscoPoPViewProvider } from './newnewdiscopop_webview_provider';
 import { executeFileMappingTask } from './tasks/task_file_mapping';
 import { executeCUGenTask } from './tasks/task_cu_gen';
 import { executeDepProfTask } from './tasks/task_dep_prof';
@@ -11,6 +11,8 @@ import { executeRedOpTask } from './tasks/task_red_op';
 import { SourceHighlighting } from './misc/source_highlighting';
 import { CodeActions } from './misc/code_actions';
 import { createFolderIfNotExist } from './misc/iomanip';
+import { Configuration } from './misc/fileconfiguration';
+import { FileManager } from './misc/filemanager';
 
 
 // this method is called when your extension is activated
@@ -18,6 +20,8 @@ import { createFolderIfNotExist } from './misc/iomanip';
 export function activate(context: vscode.ExtensionContext) {
 
 	createFolderIfNotExist(vscode.workspace.workspaceFolders![0].uri.path + '/discopop-tmp');
+
+	Configuration.load();
 
 	// Use the console to output diagnostic information (console.log) and errors (console.error)
 	// This line of code will only be executed once when your extension is activated
@@ -90,9 +94,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 	});
 
-	const fileMappingInterval = setInterval(() => {
-		executeFileMappingTask(viewProvider);
-	}, 10000);
+	FileManager.init();
 
 
 }

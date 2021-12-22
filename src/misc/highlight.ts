@@ -6,6 +6,7 @@ export class Highlight{
     public endLine: number;
     public startIndex: number;
     public endIndex: number;
+    public active: boolean;
 
     public text: string;
 
@@ -15,5 +16,6 @@ export class Highlight{
         this.endLine = endLine;
         this.endIndex = endIndex;
         this.text = text;
+        this.active = true;
     }
 }

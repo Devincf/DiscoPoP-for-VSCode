@@ -47,7 +47,7 @@ export class DiscoPoPViewProvider implements vscode.WebviewViewProvider {
     this.buildPath = `${vscode.workspace.getConfiguration("discopopvsc").get("build_path")}/`;
     this.discopopPath = `${vscode.workspace.getConfiguration("discopopvsc").get("path")}`;
     
-    this.sourceHighlighting.setView(this);
+    //LOLLOLOLOLthis.sourceHighlighting.setView(this);
 
     if(getAllFilesInFolderWithPattern(this.folderPath + '/discopop-tmp', "(.*)dp.ll").length > 0){
       this.stages[0]['dep_prof'] = 2;
@@ -81,7 +81,7 @@ export class DiscoPoPViewProvider implements vscode.WebviewViewProvider {
   onReceiveMessage(message: any) {
     switch (message.command) {
       case 'createFileMapping':
-        executeFileMappingTask(this);
+        //LOLLOLOLOLexecuteFileMappingTask(this);
         this.webview!.webview.html = this.webview!.webview.html;
         break;
       case 'startTasks':
@@ -101,7 +101,7 @@ export class DiscoPoPViewProvider implements vscode.WebviewViewProvider {
         {
           //const tempfiles = message.files.filter((m: any) => m.selected).map((m: any) => m.file.path);
           const tempfiles = getFiles(this.folderPath).filter(file => file.endsWith('.c') || file.endsWith('.cpp') || file.endsWith('.cc'));
-          executePatIdTask(this, tempfiles, this.useMakefile);
+          //LOLLOLOLOLexecutePatIdTask(this, tempfiles, this.useMakefile);
           this.lastFiles = tempfiles;
           break;
         }
@@ -357,7 +357,7 @@ width:160px;
 </style>
 
 <div id="wrapper">
-<p id="current-status-label">
+<p id="current-status-label"> AHHAHAHAHAHA
 Current Stage: ${this.currentStage+1}
 <select name="stages" id="stages" onchange="vscode.postMessage({command: 'setStage', stage: this.selectedIndex});">
   <option ${this.currentStage === 0 ? 'selected' : ''} value="0">Stage One</option>

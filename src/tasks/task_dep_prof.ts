@@ -2,8 +2,9 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 
 import { exec } from 'child_process';
-import { DiscoPoPViewProvider } from '../newdiscopop_webview_provider';
+import { DiscoPoPViewProvider } from '../newnewdiscopop_webview_provider';
 import { createFolderIfNotExist, getFiles } from '../misc/iomanip';
+import { Configuration } from '../misc/fileconfiguration';
 
 export function executeDepProfTask(discopopView: DiscoPoPViewProvider, ifiles?: string[], useMakefile: boolean = false) {
     //copy from scripts to folder
@@ -24,13 +25,18 @@ function executeNormal(discopopView: DiscoPoPViewProvider, ifiles?: string[]) {
     }
     files.forEach(async (file, index) => {
         console.log(`Dependency Profiling for file (${index}) ${file}`);
-        let re = new RegExp(discopopView.folderPath + "\/(.*)[\.]");
+        let re = new RegExp(/[^\\\/]+(?=\.[\w]+$)|[^\\\/]+$/g);
         const clang = vscode.workspace.getConfiguration("discopopvsc").get("clang");
-        const outFileName = file.match(re)![1];
+        const outFileName = file.match(re)![0];
+
+        let fileKey = Configuration.getFileUuid(file);
+
         createFolderIfNotExist(`${discopopView.folderPath}/discopop-tmp`);
-        const execStr = `${clang} -g -O0 -S -emit-llvm -fno-discard-value-names -Xclang -load -Xclang ${discopopView.buildPath}/libi/LLVMDPInstrumentation.so -mllvm -fm-path -mllvm ./FileMapping.txt -o ${outFileName}_dp.ll ${file}`;
+        createFolderIfNotExist(`${discopopView.folderPath}/discopop-tmp/${fileKey}`);
+        
+        const execStr = `${clang} -g -O0 -S -emit-llvm -fno-discard-value-names -Xclang -load -Xclang ${discopopView.buildPath}/libi/LLVMDPInstrumentation.so -mllvm -fm-path -mllvm ../FileMapping.txt -o ${outFileName}_dp.ll ${file}`;
         console.log(execStr);
-        exec(execStr, { cwd: discopopView.folderPath + '/discopop-tmp' }, (error, stdout, stderr) => {
+        exec(execStr, { cwd: `${discopopView.folderPath}/discopop-tmp/${fileKey}` }, (error, stdout, stderr) => {
             if (error) {
                 vscode.window.showErrorMessage(`Error during step 1 of identifying data dependencies in file ${outFileName}`);
                 console.log(`error: ${error.message}`);
@@ -39,7 +45,7 @@ function executeNormal(discopopView: DiscoPoPViewProvider, ifiles?: string[]) {
             }
             const execStr = `${clang} ${outFileName}_dp.ll -o ${outFileName}_dp_run -L${discopopView.buildPath}/rtlib -lDiscoPoP_RT -lpthread`;
             console.log(execStr);
-            exec(execStr, { cwd: discopopView.folderPath + '/discopop-tmp' }, (error, stdout, stderr) => {
+            exec(execStr, { cwd: `${discopopView.folderPath}/discopop-tmp/${fileKey}` }, (error, stdout, stderr) => {
                 if (error) {
                     vscode.window.showErrorMessage(`Error during step 2 of identifying data dependencies in file ${outFileName}`);
                     console.log(`error: ${error.message}`);
@@ -54,7 +60,7 @@ function executeNormal(discopopView: DiscoPoPViewProvider, ifiles?: string[]) {
                 }
                 const execStr = `./${outFileName}_dp_run`;
                 console.log(execStr);
-                exec(execStr, { cwd: discopopView.folderPath + '/discopop-tmp' }, (error, stdout, stderr) => {
+                exec(execStr, { cwd: `${discopopView.folderPath}/discopop-tmp/${fileKey}` }, (error, stdout, stderr) => {
                     if (error) {
                         vscode.window.showErrorMessage(`Error during step 3 of identifying data dependencies in file ${outFileName}`);
                         console.log(`error: ${error.message}`);
