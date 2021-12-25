@@ -4,19 +4,19 @@ import * as fs from 'fs';
 import { exec } from 'child_process';
 import { DiscoPoPViewProvider } from '../newnewdiscopop_webview_provider';
 import { createFolderIfNotExist, getFiles } from '../misc/iomanip';
-import { Configuration } from '../misc/fileconfiguration';
+import { FileManager } from '../misc/filemanager';
 
-export function executeDepProfTask(discopopView: DiscoPoPViewProvider, ifiles?: string[], useMakefile: boolean = false) {
+export function executeDepProfTask(discopopView: DiscoPoPViewProvider, ifiles?: string[], showMessage: boolean = true, callback?: Function) {
     //copy from scripts to folder
     console.log("executeDepProfTask");
-    if (useMakefile) {
-        executeMakefile(discopopView);
+    if (discopopView.useMakefile) {
+        executeMakefile(discopopView, showMessage, callback);
     } else {
-        executeNormal(discopopView, ifiles);
+        executeNormal(discopopView, ifiles,showMessage, callback);
     }
 }
 
-function executeNormal(discopopView: DiscoPoPViewProvider, ifiles?: string[]) {
+function executeNormal(discopopView: DiscoPoPViewProvider, ifiles?: string[], showMessage: boolean = true, callback?: Function) {
     let files: string[] = [];
     if (ifiles === undefined) {
         files = getFiles(discopopView.folderPath);
@@ -29,7 +29,8 @@ function executeNormal(discopopView: DiscoPoPViewProvider, ifiles?: string[]) {
         const clang = vscode.workspace.getConfiguration("discopopvsc").get("clang");
         const outFileName = file.match(re)![0];
 
-        let fileKey = Configuration.getFileUuid(file);
+        //let fileKey = Configuration.getFileUuid(file);
+        let fileKey = FileManager.getFileId(file);
 
         createFolderIfNotExist(`${discopopView.folderPath}/discopop-tmp`);
         createFolderIfNotExist(`${discopopView.folderPath}/discopop-tmp/${fileKey}`);
@@ -73,14 +74,19 @@ function executeNormal(discopopView: DiscoPoPViewProvider, ifiles?: string[]) {
                         discopopView.stages[0]['dep_prof'] = 1;
                         return;
                     }
-                    vscode.window.showInformationMessage('Finished identifying data dependencies');
+                    if(showMessage){
+                        vscode.window.showInformationMessage('Finished identifying data dependencies');
+                    }
+                    if(callback !== undefined){
+                        callback.call(null,2);
+                    }
                     discopopView.stages[0]['dep_prof'] = 2;
                 });
             });
         });
     });
 }
-function executeMakefile(discopopView: DiscoPoPViewProvider) {
+function executeMakefile(discopopView: DiscoPoPViewProvider, showMessage: boolean, callback?: Function)  {
     const execStr = `python3 -m Makefile_Analyzer --target-project=${discopopView.folderPath} --target-makefile=${discopopView.folderPath}/Makefile --dp-path=${discopopView.discopopPath} --dp-build-path=${discopopView.buildPath} --exec-mode=dep --clang-bin=clang-8 --clang++-bin=clang++-8 --llvm-link-bin=llvm-link-8`;
     //TODO: REMOVE AFTER FIX
 
@@ -88,7 +94,12 @@ function executeMakefile(discopopView: DiscoPoPViewProvider) {
         //create highlight for each obj
         const execStr = `make -f tmp_makefile.mk && ./out && cd ..`;
         exec(execStr, { cwd: discopopView.folderPath }, (error, stdout, stderr) => {
-            vscode.window.showInformationMessage('Pattern Identification using a Makefile finished');
+            if(showMessage){
+                vscode.window.showInformationMessage('Finished identifying data dependencies');
+            }
+            if(callback !== undefined){
+                callback.call(null,2);
+            }
             discopopView.stages[0]['dep_prof'] = 2;
         });
     });

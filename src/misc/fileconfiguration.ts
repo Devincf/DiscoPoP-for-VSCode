@@ -4,7 +4,7 @@ import * as vscode from 'vscode';
 
 import {v4 as uuidv4} from 'uuid';
 import { SourceHighlighting } from "./source_highlighting";
-import { Highlight } from "./highlight";
+import { Pattern } from "./pattern";
 
 
 function replacer(key: any, value: any) {
@@ -39,7 +39,7 @@ class File{
     }
 }
 
-export class Configuration{
+class Configuration{
     static updateHighlights(highlights: any) {
         this.configs.set('highlighting', highlights);
         this.writeToFile();

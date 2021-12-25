@@ -22,12 +22,12 @@ export function executeFileMappingTask(discopopView: DiscoPoPViewProvider, showM
 				console.log(execStr);
 				exec('./dp-fmap', { cwd: discopopView.folderPath }, (error, stdout, stderr) => {
 					if (error) {
-						vscode.window.showErrorMessage('Error creating File Mapping');
+						vscode.window.showErrorMessage('Error creating File Mapping: ' + error);
 						console.log(`error: ${error.message}`);
 						return;
 					}
 					if (stderr) {
-						vscode.window.showErrorMessage('Error creating File Mapping');
+						vscode.window.showErrorMessage('Stderr creating File Mapping: ' + stderr);
 						console.log(`stderr: ${stderr}`);
 						return;
 					}
@@ -37,7 +37,7 @@ export function executeFileMappingTask(discopopView: DiscoPoPViewProvider, showM
 						vscode.window.showInformationMessage('File Mapping created successfully');
 					}
 					if(callback !== undefined){
-						callback.call(null);
+						callback.call(null,0);
 					}
 				});
 			});

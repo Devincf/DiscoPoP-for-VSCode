@@ -3,34 +3,20 @@ import * as vscode from 'vscode';
 import { DiscoPoPViewProvider } from '../newnewdiscopop_webview_provider';
 import { executePatIdTask } from '../tasks/task_pat_id';
 import { Heatmap } from './heatmap';
-import { Highlight } from './highlight';
+import { Pattern } from './pattern';
 import { getAllPatternFiles, nameFromPath } from './iomanip';
 
 import { Rainbow } from '@indot/rainbowvis';
-import { Configuration } from './fileconfiguration';
 import { Settings } from './settings';
+import { FileManager, File } from './filemanager';
+import { Decorations } from './decorations';
 
-// create a decorator type that we use to decorate small numbers
-const highlightDecorationType = vscode.window.createTextEditorDecorationType({
-    borderWidth: '1px',
-    borderStyle: 'solid',
-    backgroundColor: '#C0C0C010',
-    overviewRulerColor: '#C0C0C0',
-    overviewRulerLane: vscode.OverviewRulerLane.Right,
-    light: {
-        // this color will be used in light color themes
-        borderColor: 'darkblue'
-    },
-    dark: {
-        // this color will be used in dark color themes
-        borderColor: 'white'
-    }
-});
+
 export class SourceHighlighting {
     diagnostics: vscode.Diagnostic[] = [];
 
-    highlights: Map<string, Highlight[] | undefined> = new Map<string, Highlight[] | undefined>();
-    heatmaps: Map<string, Heatmap[] | undefined> = new Map<string, Heatmap[] | undefined>();
+    //highlights: Map<string, Highlight[] | undefined> = new Map<string, Highlight[] | undefined>();
+    //heatmaps: Map<string, Heatmap[] | undefined> = new Map<string, Heatmap[] | undefined>();
 
     decorationTypes: Map<number, vscode.TextEditorDecorationType> = new Map<number, vscode.TextEditorDecorationType>();
 
@@ -67,144 +53,263 @@ export class SourceHighlighting {
         }, null, extContext.subscriptions);
     }
 
+    loadDataFromMakefileContent(value: File, key: number, forceReload?: boolean) {
+        //load patterns.json
+        if (fs.existsSync(`${this.discopopView?.folderPath}/discopop-tmp/patterns.json`)) {
+            fs.readFile(`${this.discopopView?.folderPath}/discopop-tmp/patterns.json`, (err, data) => {
+                if (err) {
+                    throw err;
+                }
+
+                var obj = JSON.parse(data.toString());
+                //value.removeAllHighlights();
+                value.removeAllMeta();
+                obj.reduction.forEach((element: any) => {
+                    if (element.node_id.startsWith(key.toString())) {
+                        //console.log(element);
+                        value.addHighlight({
+                            startLine: parseInt(element.start_line.split(':')[1]),
+                            endLine: parseInt(element.end_line.split(':')[1]),
+                            startIndex: 0,
+                            endIndex: 1000,
+                            active: true,
+                            type: 'reduction',
+                            decorationType: Decorations.DO_ALL,
+                            diagnosticText: 'Insert reduction pragma',
+                            text: 'Reduction',
+                            data: element,
+                        });
+                        //value.addHighlight(new Highlight(parseInt(element.start_line.split(':')[1]) - 1, 0, parseInt(element.end_line.split(':')[1]) - 1, 1000, 'Do All Reduction'));
+                    }
+                });
+                obj.do_all.forEach((element: any) => {
+                    if (element.node_id.startsWith(key.toString())) {
+                        //console.log(element);
+                        value.addHighlight({
+                            startLine: parseInt(element.start_line.split(':')[1]),
+                            endLine: parseInt(element.end_line.split(':')[1]),
+                            startIndex: 0,
+                            endIndex: 1000,
+                            active: true,
+                            type: 'do_all',
+                            decorationType: Decorations.DO_ALL,
+                            diagnosticText: 'Insert do_all pragma',
+                            text: 'Do All Reduction',
+                            data: element,
+                        });
+                    }
+                    //discopopView.sourceHighlighting.reload();
+                });
+                obj.pipeline.forEach((element: any) => {
+                    if (element.node_id.startsWith(key.toString())) {
+                        //console.log(element);
+                        value.addHighlight({
+                            startLine: parseInt(element.start_line.split(':')[1]),
+                            endLine: parseInt(element.end_line.split(':')[1]),
+                            startIndex: 0,
+                            endIndex: 1000,
+                            active: true,
+                            type: 'pipeline',
+                            decorationType: Decorations.DO_ALL,
+                            diagnosticText: 'Insert pipeline stages',
+                            text: 'Pipeline',
+                            data: element,
+                        });
+                        //value.addHighlight(new Highlight(parseInt(element.start_line.split(':')[1]) - 1, 0, parseInt(element.end_line.split(':')[1]) - 1, 1000, 'Do All Reduction'));
+                    }
+                    //discopopView.sourceHighlighting.reload();
+                });
+                obj.geometric_decomposition.forEach((element: any) => {
+                    if (element.node_id.startsWith(key.toString())) {
+                        //console.log(element);
+                        value.addHighlight({
+                            startLine: parseInt(element.start_line.split(':')[1]),
+                            endLine: parseInt(element.end_line.split(':')[1]),
+                            startIndex: 0,
+                            endIndex: 1000,
+                            active: true,
+                            type: 'geometric_decomposition',
+                            decorationType: Decorations.DO_ALL,
+                            diagnosticText: 'Insert geometric decomposition pragma',
+                            text: 'Geometric Decomposition',
+                            data: element,
+                        });
+                        //value.addHighlight(new Highlight(parseInt(element.start_line.split(':')[1]) - 1, 0, parseInt(element.end_line.split(':')[1]) - 1, 1000, 'Do All Reduction'));
+                    }
+                    //discopopView.sourceHighlighting.reload();
+                });
+            });
+        }
+
+        //load heatmaps
+        if (fs.existsSync(`${this.discopopView?.folderPath}/loop_counter_output.txt`)) {
+            fs.readFile(`${this.discopopView?.folderPath}/loop_counter_output.txt`, (err, data) => {
+                if (err) {
+                    throw err;
+                }
+
+                const dataxml = fs.readFileSync(`${this.discopopView?.folderPath}/Data.xml`).toString();
+
+                const loops = data.toString().split('\n').slice(0, -1);
+                value.removeAllHeatmaps();
+                loops.forEach((loop: string) => {
+                    const loopCounter = loop.split(' ');
+                    const startLine = parseInt(loopCounter[1]);
+                    const amount = parseInt(loopCounter[2]);
+
+                    //find loop End in data.xml
+                    const regexStr = `\<Node id="${key}:(.*)" type="2" name="(.*)" startsAtLine = "(.*):${startLine}" endsAtLine = "(.*):(.*)"`;
+                    let regExp = new RegExp(regexStr);
+                    const a = dataxml.match(regExp);
+                    if (a) {
+                        const lineEnd = parseInt(a![5]!);
+
+                        value.addLoopHeatmap(new Heatmap(startLine, lineEnd, amount));
+                    }
+                });
+            });
+        }
+    }
+
+    loadDataNormally(value: File, key: number, forceReload?: boolean) {
+
+        if (value.dataxml === '') {
+            if (fs.existsSync(`${this.discopopView?.folderPath}/discopop-tmp/${key}/Data.xml`)) {
+                value.updateDataXML(fs.readFileSync(`${this.discopopView?.folderPath}/discopop-tmp/${key}/Data.xml`).toString());
+            }
+        }
+
+        if (!FileManager.hasData()) {
+            if (fs.existsSync(`${this.discopopView?.folderPath}/discopop-tmp/${key}/patterns.json`)) {
+                fs.readFile(`${this.discopopView?.folderPath}/discopop-tmp/${key}/patterns.json`, (err, data) => {
+                    if (err) {
+                        throw err;
+                    }
+
+                    var obj = JSON.parse(data.toString());
+                    value.removeAllHighlights();
+                    obj.reduction.forEach((element: any) => {
+                        if (element.node_id.startsWith(key.toString())) {
+                            //console.log(element);
+                            value.addHighlight({
+                                startLine: parseInt(element.start_line.split(':')[1]),
+                                endLine: parseInt(element.end_line.split(':')[1]),
+                                startIndex: 0,
+                                endIndex: 1000,
+                                active: true,
+                                type: 'reduction',
+                                decorationType: Decorations.DO_ALL,
+                                diagnosticText: 'Insert reduction pragma',
+                                text: 'Reduction',
+                                data: element,
+                            });
+                            //value.addHighlight(new Highlight(parseInt(element.start_line.split(':')[1]) - 1, 0, parseInt(element.end_line.split(':')[1]) - 1, 1000, 'Do All Reduction'));
+                        }
+                    });
+                    obj.do_all.forEach((element: any) => {
+                        if (element.node_id.startsWith(key.toString())) {
+                            //console.log(element);
+                            value.addHighlight({
+                                startLine: parseInt(element.start_line.split(':')[1]),
+                                endLine: parseInt(element.end_line.split(':')[1]),
+                                startIndex: 0,
+                                endIndex: 1000,
+                                active: true,
+                                type: 'do_all',
+                                decorationType: Decorations.DO_ALL,
+                                diagnosticText: 'Insert do_all pragma',
+                                text: 'Do All Reduction',
+                                data: element,
+                            });
+                        }
+                        //discopopView.sourceHighlighting.reload();
+                    });
+                    obj.pipeline.forEach((element: any) => {
+                        if (element.node_id.startsWith(key.toString())) {
+                            //console.log(element);
+                            value.addHighlight({
+                                startLine: parseInt(element.start_line.split(':')[1]),
+                                endLine: parseInt(element.end_line.split(':')[1]),
+                                startIndex: 0,
+                                endIndex: 1000,
+                                active: true,
+                                type: 'pipeline',
+                                decorationType: Decorations.DO_ALL,
+                                diagnosticText: 'Insert pipeline stages',
+                                text: 'Pipeline',
+                                data: element,
+                            });
+                            //value.addHighlight(new Highlight(parseInt(element.start_line.split(':')[1]) - 1, 0, parseInt(element.end_line.split(':')[1]) - 1, 1000, 'Do All Reduction'));
+                        }
+                        //discopopView.sourceHighlighting.reload();
+                    });
+                    obj.geometric_decomposition.forEach((element: any) => {
+                        if (element.node_id.startsWith(key.toString())) {
+                            //console.log(element);
+                            value.addHighlight({
+                                startLine: parseInt(element.start_line.split(':')[1]),
+                                endLine: parseInt(element.end_line.split(':')[1]),
+                                startIndex: 0,
+                                endIndex: 1000,
+                                active: false,
+                                type: 'geometric_decomposition',
+                                decorationType: Decorations.DO_ALL,
+                                diagnosticText: 'Insert geometric decomposition pragma',
+                                text: 'Geometric Decomposition',
+                                data: element,
+                            });
+                            //value.addHighlight(new Highlight(parseInt(element.start_line.split(':')[1]) - 1, 0, parseInt(element.end_line.split(':')[1]) - 1, 1000, 'Do All Reduction'));
+                        }
+                        //discopopView.sourceHighlighting.reload();
+                    });
+                });
+            }
+            if (fs.existsSync(`${this.discopopView?.folderPath}/discopop-tmp/${key}/loop_counter_output.txt`)) {
+                fs.readFile(`${this.discopopView?.folderPath}/discopop-tmp/${key}/loop_counter_output.txt`, (err, data) => {
+                    if (err) {
+                        throw err;
+                    }
+                    const loops = data.toString().split('\n').slice(0, -1);
+                    value.removeAllHeatmaps();
+                    loops.forEach((loop: string) => {
+                        const loopCounter = loop.split(' ');
+                        const startLine = parseInt(loopCounter[1]);
+                        const amount = parseInt(loopCounter[2]);
+
+                        //find loop End in data.xml
+                        const regexStr = `\<Node id="(.*)" type="2" name="(.*)" startsAtLine = "(.*):${startLine}" endsAtLine = "(.*):(.*)"`;
+                        let regExp = new RegExp(regexStr);
+                        const a = value.dataxml.match(regExp);
+                        const lineEnd = parseInt(a![5]!);
+
+                        value.addLoopHeatmap(new Heatmap(startLine, lineEnd, amount));
+                    });
+                });
+            }
+        }
+    }
+
     loadData(forceReload: boolean = false) {
         if (this.discopopView) {
-            const files = Configuration.getFiles();
+            //const files = Configuration.getFiles();
+            const files = FileManager.getFiles();
             files?.forEach((value, key) => {
-                if(Configuration.getConfigValue('highlighting', 'code')?.has(value.path) && !forceReload){
-                    this.highlights.set(value.path, Configuration.getConfigValue('highlighting', 'code').get(value.path));
-                }else if (fs.existsSync(`${this.discopopView?.folderPath}/discopop-tmp/${key}/patterns.json`)) {
-                    fs.readFile(`${this.discopopView?.folderPath}/discopop-tmp/${key}/patterns.json`, (err, data) => {
-                        if (err) {
-                            throw err;
-                        }
-
-                        var obj = JSON.parse(data.toString());
-                        this.removeAllHighlights(value.path);
-                        obj.do_all.forEach((element: any) => {
-                            console.log(element);
-                            this.addHighlight(value.path, new Highlight(parseInt(element.start_line.split(':')[1]) - 1, 0, parseInt(element.end_line.split(':')[1]) - 1, 1000, 'Do All Reduction'));
-                            //discopopView.sourceHighlighting.reload();
-                        });
-                    });
+                if (value.makefileGenerated) {
+                    // load from normal data ugh.
+                    this.loadDataFromMakefileContent(value, key, forceReload);
+                } else {
+                    this.loadDataNormally(value, key, forceReload);
                 }
-                if(Configuration.getConfigValue('highlighting', 'heatmaps')?.has(value.path)&& !forceReload){
-                    this.heatmaps.set(value.path, Configuration.getConfigValue('highlighting', 'heatmaps').get(value.path));
-                }
-                else if(fs.existsSync(`${this.discopopView?.folderPath}/discopop-tmp/${key}/loop_counter_output.txt`)){
-                    fs.readFile(`${this.discopopView?.folderPath}/discopop-tmp/${key}/loop_counter_output.txt`, (err, data) => {
-                        if (err) {
-                            throw err;
-                        }
-                        const loops = data.toString().split('\n').slice(0, -1);
-                        this.removeAllHeatmaps(value.path);
-                        let largestAmount = 0;
-                        let smallestAmount = 999999999;
-                        loops.forEach((loop: string) => {
-                            const loopCounter = loop.split(' ');
-                            const startLine = parseInt(loopCounter[1]);
-                            const amount = parseInt(loopCounter[2]);
-                            
-                            if (amount > largestAmount) {
-                                largestAmount = amount;
-                            }
-                            if (amount < smallestAmount) {
-                                smallestAmount = amount;
-                            }
-                            //find loop End in data.xml
-                            const regexStr = `\<Node id="(.*)" type="2" name="(.*)" startsAtLine = "(.*):${startLine}" endsAtLine = "(.*):(.*)"`;
-                            let regExp = new RegExp(regexStr);
-                            console.log(value.dataxml);
-                            const a = value.dataxml.match(regExp);
-                            const lineEnd = parseInt(a![5]!);
-                            
-                            this.addLoopHeatmap(value.path, new Heatmap(startLine, lineEnd, amount));
-                        });
-                    });
-                }
-                });
+            });
             this.refresh();
         }
     }
 
-    addLoopHeatmap(fileName: string, heatmap: Heatmap) {
-        this.heatmaps.get(fileName)?.push(heatmap);
-        //TODO: Change all to heatmaps
-        Configuration.updateHighlights(new Map<string, any>([["heatmaps",this.heatmaps], ["code",this.highlights]]));
-    }
-
-    incrementHeatmapLinesAfterLine(fileName: string, line: number) {
-        console.log("INCREMENTING LINES");
-        this.heatmaps.get(fileName)?.forEach(hl => { if (hl.startLine > line) { hl.startLine += 1; hl.endLine += 1; } });
-        Configuration.updateHighlights(new Map<string, any>([["heatmaps",this.heatmaps], ["code",this.highlights]]));
-    }
-    decrementHeatmapLinesAfterLine(fileName: string, line: number) {
-        this.heatmaps.get(fileName)?.forEach(hl => { if (hl.startLine > line) { hl.startLine -= 1; hl.endLine -= 1; } });
-        Configuration.updateHighlights(new Map<string, any>([["heatmaps",this.heatmaps], ["code",this.highlights]]));
-    }
-
-    deactivateHeatmapAtLine(fileName: string, line: number) {
-        let heatmap = this.heatmaps.get(fileName)?.find(hl => hl.startLine === line);
-        heatmap!.active = false;
-        Configuration.updateHighlights(new Map<string, any>([["heatmaps",this.heatmaps], ["code",this.highlights]]));
-    }
-    activateHeatmapAtLine(fileName: string, line: number) {
-        let heatmap = this.heatmaps.get(fileName)?.find(hl => hl.startLine === line + 1);
-        heatmap!.active = true;
-        Configuration.updateHighlights(new Map<string, any>([["heatmaps",this.heatmaps], ["code",this.highlights]]));
-    }
-    removeAllHeatmaps(fileName: string) {
-        this.heatmaps.set(fileName, []);
-        Configuration.updateHighlights(new Map<string, any>([["heatmaps",this.heatmaps], ["code",this.highlights]]));
-    }
-
-
-    addHighlight(fileName: string, highlight: Highlight) {
-        this.highlights.get(fileName)?.push(highlight);
-        Configuration.updateHighlights(new Map<string, any>([["heatmaps",this.heatmaps], ["code",this.highlights]]));
-    }
-
-    removeHighlightAtRange(fileName: string, range: vscode.Range) {
-        this.highlights.set(fileName, this.highlights.get(fileName)?.filter(highlight => !(highlight.startLine === range.start.line && highlight.startIndex === range.start.character)));
-        Configuration.updateHighlights(new Map<string, any>([["heatmaps",this.heatmaps], ["code",this.highlights]]));
-    }
-
-    removeHighlightAtLine(fileName: string, line: number) {
-        this.highlights.set(fileName, this.highlights.get(fileName)?.filter(hl => !(line >= hl.startLine && line <= hl.endLine)));
-        Configuration.updateHighlights(new Map<string, any>([["heatmaps",this.heatmaps], ["code",this.highlights]]));
-    }
-    removeAllHighlights(fileName: string) {
-        this.highlights.set(fileName, []);
-        Configuration.updateHighlights(new Map<string, any>([["heatmaps",this.heatmaps], ["code",this.highlights]]));
-    }
-
-    incrementHighlightLinesAfterLine(fileName: string, line: number) {
-        console.log("INCREMENTING LINES");
-        this.highlights.get(fileName)?.forEach(hl => { if (hl.startLine > line) { hl.startLine += 1; hl.endLine += 1; } });
-        Configuration.updateHighlights(new Map<string, any>([["heatmaps",this.heatmaps], ["code",this.highlights]]));
-    }
-    decrementHighlightLinesAfterLine(fileName: string, line: number) {
-        this.highlights.get(fileName)?.forEach(hl => { if (hl.startLine > line) { hl.startLine -= 1; hl.endLine -= 1; } });
-        Configuration.updateHighlights(new Map<string, any>([["heatmaps",this.heatmaps], ["code",this.highlights]]));
-    }
-
-    getHighlightAtLine(fileName: string, line: number) {
-        return this.highlights.get(fileName)?.find(hl => line >= hl.startLine && line <= hl.endLine);
-    }
-
-    deactivateHighlightAtLine(fileName: string, line: number) {
-        let highlight = this.highlights.get(fileName)?.find(hl => hl.startLine === line);
-        highlight!.active = false;
-        Configuration.updateHighlights(new Map<string, any>([["heatmaps",this.heatmaps], ["code",this.highlights]]));
-    }
-    activateHighlightAtLine(fileName: string, line: number) {
-        let highlight = this.highlights.get(fileName)?.find(hl => hl.startLine === line + 1);
-        highlight!.active = true;
-        Configuration.updateHighlights(new Map<string, any>([["heatmaps",this.heatmaps], ["code",this.highlights]]));
-    }
-
     refresh() {
-        if (this.lastDoc) {
+        if (!FileManager.writeToConfigFile()) {
+            this.loadData();
+        }
+        else if (this.lastDoc) {
             this.refreshDiagnostics(this.lastDoc, this.lastCollection);
             this.updateDecorations();
         }
@@ -217,31 +322,31 @@ export class SourceHighlighting {
 
         //Load from file
 
-
-
-
         const diagnostics: vscode.Diagnostic[] = [];
+        const file = FileManager.getFileFromName(doc.fileName);
+        if (file) {
 
-        if (this.discopopView) {
-            //this.highlights.get(nameFromPath(this.discopopView.folderPath, doc.fileName))?.forEach((highlight) => {
-            this.highlights.get(doc.fileName)?.forEach((highlight) => {
-                if (highlight.active) {
-                    diagnostics.push(this.createDeadCodeDiagnostic(highlight.startLine, highlight.startIndex, highlight.endLine, highlight.endIndex));
-                }
-            });
+            if (this.discopopView) {
+                //this.highlights.get(nameFromPath(this.discopopView.folderPath, doc.fileName))?.forEach((highlight) => {
+                file.patterns.forEach((pattern) => {
+                    if (pattern.active) {
+                        diagnostics.push(this.createDeadCodeDiagnostic(pattern));
+                    }
+                });
+            }
+
+            diagnosticCollection.set(doc.uri, diagnostics);
+            console.log(diagnosticCollection);
         }
-
-        diagnosticCollection.set(doc.uri, diagnostics);
-        console.log(diagnosticCollection);
 
     }
 
-    createDeadCodeDiagnostic(startLine: number, startIndex: number, endLine: number, endIndex: number): vscode.Diagnostic {
-        const range = new vscode.Range(startLine, startIndex, endLine, endIndex);
+    createDeadCodeDiagnostic(pattern: Pattern): vscode.Diagnostic {
+        const range = new vscode.Range(pattern.startLine - 1, pattern.startIndex, pattern.endLine - 1, pattern.endIndex);
 
-        const diagnostic = new vscode.Diagnostic(range, "This code can be optimized", vscode.DiagnosticSeverity.Information);
-        diagnostic.code = 'deadcode_hint';
-        diagnostic.source = 'DiscoPoP';
+        const diagnostic = new vscode.Diagnostic(range, pattern.diagnosticText, vscode.DiagnosticSeverity.Information);
+        diagnostic.code = pattern.type;
+        diagnostic.source = 'DiscoPoP for VSCode';
         return diagnostic;
     }
 
@@ -287,105 +392,125 @@ export class SourceHighlighting {
             vscode.window.onDidChangeActiveTextEditor(editor => {
                 if (editor) {
                     this.refreshDiagnostics(editor.document, diagnosticCollection);
+                    this.oldText = editor.document.getText();
                 }
             })
         );
 
         context.subscriptions.push(
             vscode.workspace.onDidChangeTextDocument(e => {
+                console.log(e.contentChanges);
                 this.refreshDiagnostics(e.document, diagnosticCollection);
 
                 const newText = e.document.getText();
 
+                if (e.contentChanges.length === 0) {
+                    this.oldText = newText;
+                    return;
+                }
+                let refreshAfter = false;
+
                 let fileName = e.document.fileName;
+                const file = FileManager.getFileFromName(fileName);
                 /*if (this.discopopView) {
                     fileName = nameFromPath(this.discopopView.folderPath, e.document.fileName);
                 }*/
+                if (file) {
 
-                if (this.oldText !== '') {
+                    if (this.oldText !== '') {
 
-
-                    //find new pragmas
-                    const pragmasOld = this.indexes(this.oldText, '#pragma omp');
-                    const pragmasNew = this.indexes(newText, '#pragma omp');
-
-                    if (pragmasNew.length > pragmasOld.length) {
-
-                        //const newPragma = pragmasNew.filter(pragma => pragmasOld.findIndex(el => el === pragma || el + 25 === pragma) === -1)[0];
-
-                        let newPragma = 0;
-                        for (let i = 0; i < pragmasNew.length; i++) {
-                            if (pragmasNew[i] !== pragmasOld[i]) {
-                                newPragma = pragmasNew[i];
-                                break;
-                            }
+                        if (this.oldText === newText) {
+                            console.log("SAME TEXT???");
                         }
-                        console.log("new Pragma added at position " + newPragma);
-                        //this.removeHighlightAtLine(fileName,e.document.positionAt(newPragma).line);
-                        this.deactivateHighlightAtLine(fileName, e.document.positionAt(newPragma).line);
-                        this.refresh();
+
+
+                        //find new newlines
+                        const newlinesOld = this.indexes(this.oldText, '\n');
+                        const newlinesNew = this.indexes(newText, '\n');
+
+                        if (newlinesNew.length > newlinesOld.length) {
+                            let newNewLine = 0;
+                            for (let i = 0; i < newlinesNew.length; i++) {
+                                if (newlinesNew[i] !== newlinesOld[i]) {
+                                    newNewLine = newlinesNew[i];
+                                    break;
+                                }
+                            }
+                            //const newNewline = newlinesNew.filter(pragma => newlinesOld.findIndex(el => el + 1 === pragma) === -1)[0];
+                            console.log("new Newline added at position " + newNewLine);
+                            const line = e.document.positionAt(newNewLine).line;
+                            file.incrementHighlightLinesAfterLine(line);
+                            file.incrementHeatmapLinesAfterLine(line);
+                            refreshAfter = true;
+                        } else if (newlinesNew.length < newlinesOld.length) {
+                            let removedNewLine = 0;
+                            for (let i = 0; i < newlinesNew.length; i++) {
+                                if (newlinesNew[i] !== newlinesOld[i]) {
+                                    removedNewLine = newlinesNew[i];
+                                    break;
+                                }
+                            }
+                            //const newNewline = newlinesNew.filter(pragma => newlinesOld.findIndex(el => el + 1 === pragma) === -1)[0];
+                            console.log("new Newline removed at position " + removedNewLine);
+                            const line = e.document.positionAt(removedNewLine).line;
+                            file.decrementHighlightLinesAfterLine(line);
+                            file.decrementHeatmapLinesAfterLine(line);
+                            refreshAfter = true;
+                        }
+
+                        //find new pragmas
+                        const pragmasOld = this.indexes(this.oldText, '#pragma omp');
+                        const pragmasNew = this.indexes(newText, '#pragma omp');
+
+                        if (pragmasNew.length > pragmasOld.length) {
+
+                            //const newPragma = pragmasNew.filter(pragma => pragmasOld.findIndex(el => el === pragma || el + 25 === pragma) === -1)[0];
+
+                            let newPragma = 0;
+                            for (let i = 0; i < pragmasNew.length; i++) {
+                                if (pragmasNew[i] !== pragmasOld[i]) {
+                                    newPragma = pragmasNew[i];
+                                    break;
+                                }
+                            }
+                            console.log("new Pragma added at position " + newPragma);
+                            const pos = e.document.positionAt(newPragma);
+                            //this.removeHighlightAtLine(fileName,e.document.positionAt(newPragma).line);
+                            file.deactivateHighlightAtLine(pos.line + 2);
+                            refreshAfter = true;
+                        }
+
+                        if (pragmasNew.length < pragmasOld.length) {
+
+                            //const newPragma = pragmasNew.filter(pragma => pragmasOld.findIndex(el => el === pragma || el + 25 === pragma) === -1)[0];
+
+                            let newPragma = 0;
+                            for (let i = 0; i < pragmasOld.length; i++) {
+                                if (pragmasOld[i] !== pragmasNew[i]) {
+                                    newPragma = pragmasOld[i];
+                                    break;
+                                }
+                            }
+                            const pos = e.document.positionAt(newPragma);
+                            file.activateHighlightAtLine(pos.line + 1);
+                            //this.removeHighlightAtLine(fileName,e.document.positionAt(newPragma).line);
+                            refreshAfter = true;
+                        }
+
                     }
 
-                    if (pragmasNew.length < pragmasOld.length) {
-
-                        //const newPragma = pragmasNew.filter(pragma => pragmasOld.findIndex(el => el === pragma || el + 25 === pragma) === -1)[0];
-
-                        let newPragma = 0;
-                        for (let i = 0; i < pragmasOld.length; i++) {
-                            if (pragmasOld[i] !== pragmasNew[i]) {
-                                newPragma = pragmasOld[i];
-                                break;
-                            }
-                        }
-                        console.log("Pragma removed at position " + newPragma);
-                        this.activateHighlightAtLine(fileName, e.document.positionAt(newPragma).line);
-                        //this.removeHighlightAtLine(fileName,e.document.positionAt(newPragma).line);
-                        this.refresh();
-                    }
-
-                    //find new newlines
-                    const newlinesOld = this.indexes(this.oldText, '\n');
-                    const newlinesNew = this.indexes(newText, '\n');
-
-                    if (newlinesNew.length > newlinesOld.length) {
-                        let newNewLine = 0;
-                        for (let i = 0; i < newlinesNew.length; i++) {
-                            if (newlinesNew[i] !== newlinesOld[i]) {
-                                newNewLine = newlinesNew[i];
-                                break;
-                            }
-                        }
-                        //const newNewline = newlinesNew.filter(pragma => newlinesOld.findIndex(el => el + 1 === pragma) === -1)[0];
-                        console.log("new Newline added at position " + newNewLine);
-                        const line = e.document.positionAt(newNewLine).line;
-                        this.incrementHighlightLinesAfterLine(fileName, line - 1);
-                        this.incrementHeatmapLinesAfterLine(fileName, line - 1);
-                        this.refresh();
-                    } else if (newlinesNew.length < newlinesOld.length) {
-                        let removedNewLine = 0;
-                        for (let i = 0; i < newlinesNew.length; i++) {
-                            if (newlinesNew[i] !== newlinesOld[i]) {
-                                removedNewLine = newlinesNew[i];
-                                break;
-                            }
-                        }
-                        //const newNewline = newlinesNew.filter(pragma => newlinesOld.findIndex(el => el + 1 === pragma) === -1)[0];
-                        console.log("new Newline removed at position " + removedNewLine);
-                        const line = e.document.positionAt(removedNewLine).line;
-                        this.decrementHighlightLinesAfterLine(fileName, line - 1);
-                        this.decrementHeatmapLinesAfterLine(fileName, line - 1);
-                        this.refresh();
-                    }
+                    this.oldText = newText;
                 }
 
-                this.oldText = newText;
+                if (refreshAfter) {
+                    this.refresh();
+                }
             })
         );
 
         context.subscriptions.push(
             vscode.workspace.onDidCloseTextDocument(doc => diagnosticCollection.delete(doc.uri))
         );
-
     }
 
     //code highlighting
@@ -401,46 +526,55 @@ export class SourceHighlighting {
         /*if (this.discopopView) {
             fileName = nameFromPath(this.discopopView.folderPath, activeEditor.document.fileName);
         }*/
-        {
-            const decorations: vscode.DecorationOptions[] = [];
-            this.highlights.get(fileName)?.forEach((highlight) => {
-                console.log("Adding highlight");
-                if (highlight.active) {
-                    const decoration = { range: new vscode.Range(highlight.startLine, highlight.startIndex, highlight.endLine, highlight.endIndex), hoverMessage: highlight.text };
-                    decorations.push(decoration);
-                }
-            });
-            activeEditor.setDecorations(highlightDecorationType, decorations);
-        }
+        const file = FileManager.getFileFromName(fileName);
+        if (file) {
 
-        if(Settings.get('loopCounter')){
-            this.heatmaps.get(fileName)?.forEach(heatmap => {
-                console.log("Adding Heatmap");
-                if (heatmap.active) {
-                    const decoration = { range: new vscode.Range(new vscode.Position(heatmap.startLine - 1, 0), new vscode.Position(heatmap.endLine, 0)), hoverMessage: "Loop executed: " + heatmap.level + " times" };
-
-                    const rgb = this.getHeatmapColourFromAmount(heatmap.level);
-                    if (!this.decorationTypes.has(heatmap.level)) {
-                        this.decorationTypes.set(heatmap.level, vscode.window.createTextEditorDecorationType({
-                            backgroundColor: rgb,
-                            overviewRulerColor: rgb,
-                            overviewRulerLane: vscode.OverviewRulerLane.Right
-                        }));
+            {
+                let decorationMap = new Map<string, vscode.DecorationOptions[]>([["reduction", []], ["do_all", []], ["pipeline", []], ["geometric_decomposition", []]]);
+                file.patterns.forEach((pattern) => {
+                    //console.log("Adding highlight");
+                    if (pattern.active) {
+                        const decoration: vscode.DecorationOptions = { range: new vscode.Range(pattern.startLine - 1, pattern.startIndex, pattern.endLine - 1, pattern.endIndex) };
+                        decorationMap.get(pattern.type)?.push(decoration);
                     }
-                    activeEditor!.setDecorations(this.decorationTypes.get(heatmap.level)!, [decoration]);
+                });
+                decorationMap.forEach((value, key) => {
+                    if (value.length > 0) {
+                        activeEditor?.setDecorations(Decorations.get(key), value);
+                    }
+                });
+            }
+            if (Settings.getValue('loopCounter')) {
+                let decorationsArray: vscode.DecorationOptions[][] = [[], [], []];
+                file.heatmaps.forEach(heatmap => {
+                    //console.log("Adding Heatmap");
+                    if (heatmap.active) {
+                        const heatmapLevel = this.getHeatmapLevelFromAmount(heatmap.level);
+                        const decoration = { range: new vscode.Range(new vscode.Position(heatmap.startLine - 1, 0), new vscode.Position(heatmap.endLine, 0)), hoverMessage: "Loop executed: " + heatmap.level + " times" };
+                        decorationsArray[heatmapLevel].push(decoration);
+                    }
+                });
+
+                decorationsArray.forEach((val, index) => {
+                    activeEditor!.setDecorations(Decorations.getHeatmapDecoration(index), val);
+                });
+            } else {
+                for (let i = 0; i < 3; i++) {
+                    activeEditor!.setDecorations(Decorations.getHeatmapDecoration(i), []);
                 }
-            });
+            }
         }
     }
-    getHeatmapColourFromAmount(level: number) {
-        //TODO: MAKE CONFIGURABLE?
-        if(level > 0 && level <= 10){
-            return '#00ff0010';
-        }else if(level > 10 && level <= 30){
-            return '#ffa50010';
-        }else if(level > 30){
-            return '#ff000010';
+
+    getHeatmapLevelFromAmount(level: number) {
+        if (level > 0 && level <= 10) {
+            return 0;
+        } else if (level > 10 && level <= 30) {
+            return 1;
+        } else if (level > 30) {
+            return 2;
         }
+        return -1;
     }
 
     triggerUpdateDecorations() {
@@ -448,7 +582,7 @@ export class SourceHighlighting {
             clearTimeout(this.timeout);
             this.timeout = undefined;
         }
-        this.timeout = setTimeout(this.updateDecorations.bind(this), 500);
+        this.timeout = setTimeout(this.refresh.bind(this), 500);
     }
 
     setView(view: DiscoPoPViewProvider) {

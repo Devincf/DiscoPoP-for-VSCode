@@ -11,7 +11,6 @@ import { executeRedOpTask } from './tasks/task_red_op';
 import { SourceHighlighting } from './misc/source_highlighting';
 import { CodeActions } from './misc/code_actions';
 import { createFolderIfNotExist } from './misc/iomanip';
-import { Configuration } from './misc/fileconfiguration';
 import { FileManager } from './misc/filemanager';
 
 
@@ -20,8 +19,9 @@ import { FileManager } from './misc/filemanager';
 export function activate(context: vscode.ExtensionContext) {
 
 	createFolderIfNotExist(vscode.workspace.workspaceFolders![0].uri.path + '/discopop-tmp');
+	FileManager.init();
 
-	Configuration.load();
+	//Configuration.load();
 
 	// Use the console to output diagnostic information (console.log) and errors (console.error)
 	// This line of code will only be executed once when your extension is activated
@@ -94,7 +94,6 @@ export function activate(context: vscode.ExtensionContext) {
 
 	});
 
-	FileManager.init();
 
 
 }

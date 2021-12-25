@@ -13,7 +13,6 @@ import { executeRedOpTask } from './tasks/task_red_op';
 import { readdirSync } from 'fs';
 import { create } from 'domain';
 import { generateKeyPairSync } from 'crypto';
-import { Configuration } from './misc/fileconfiguration';
 import { Settings } from './misc/settings';
 import { FileManager } from './misc/filemanager';
 
@@ -57,7 +56,6 @@ export class DiscoPoPViewProvider implements vscode.WebviewViewProvider {
 
   filemappingTask!: NodeJS.Timeout | null;
 
-  taskMap: Record<string, Function>;
 
   constructor(sourceHighlighting: SourceHighlighting) {
     this.sourceHighlighting = sourceHighlighting;
@@ -69,11 +67,6 @@ export class DiscoPoPViewProvider implements vscode.WebviewViewProvider {
 
     //check for existing files for stages
 
-    this.taskMap = {
-      'CU Generation': executeCUGenTask,
-      'Dependence Profiling': executeDepProfTask,
-      'Identifying Reduction Operations': executeRedOpTask
-    };
     this.folderPath = vscode.workspace.workspaceFolders![0].uri.path; //TODO: think about how to properly do this    ;
     this.buildPath = `${vscode.workspace.getConfiguration("discopopvsc").get("build_path")}/`;
     this.discopopPath = `${vscode.workspace.getConfiguration("discopopvsc").get("path")}`;
@@ -86,12 +79,12 @@ export class DiscoPoPViewProvider implements vscode.WebviewViewProvider {
     if (getAllFilesInFolderWithPattern(this.folderPath + '/discopop-tmp', "(.*)Data.xml").length > 0) {
       this.stages[0]['cu_gen'] = 2;
     }
-    Configuration.getFiles()?.forEach((value, key) => {
+    /*Configuration.getFiles()?.forEach((value, key) => {
       const path = `${this.folderPath}/discopop-tmp/${key}/`;
       if (fs.existsSync(path + 'Data.xml')) {
         Configuration.getConfigValue('files', key).dataxml = fs.readFileSync(path + 'Data.xml').toString();
       }
-    });
+    });*/
     if (getAllFilesInFolderWithPattern(this.folderPath + '/discopop-tmp', "(.*)red.bc").length > 0) {
       this.stages[0]['id_red_ops'] = 2;
     }
@@ -117,7 +110,7 @@ export class DiscoPoPViewProvider implements vscode.WebviewViewProvider {
         }
       } else {
         let re = new RegExp(/\.(cpp|c|cc|cxx)$/g);
-        if (file.match(re)) {
+        if (file.match(re) || Settings.get('allFiles')?.enabled) {
           if (!this.currentFiles.has(filePath)) {
             this.currentFiles.set(filePath, true);
           }
@@ -159,7 +152,22 @@ export class DiscoPoPViewProvider implements vscode.WebviewViewProvider {
           const tempfiles2 = [...this.currentFiles.keys()].filter((key, index) => {
             return this.currentFiles.get(key);
           });
-          this.taskMap[message.task](this, tempfiles2, this.useMakefile);
+          if(message.task === 'CU Generation'){
+            executeCUGenTask(this, tempfiles2, true, (num: number) => {
+              if(num === this.currentStage){
+                this.currentStage++;
+              }
+            });
+          }
+          if(message.task === 'Dependence Profiling'){
+            executeDepProfTask(this, tempfiles2, true, (num: number) => {
+              executeRedOpTask(this, tempfiles2, true, (num: number) => {
+                if(num === this.currentStage){
+                  this.currentStage++;
+                }
+              });
+            });
+          }
           this.lastFiles = tempfiles2;
         }
         break;
@@ -170,7 +178,7 @@ export class DiscoPoPViewProvider implements vscode.WebviewViewProvider {
           const tempfiles2 = [...this.currentFiles.keys()].filter((key, index) => {
             return this.currentFiles.get(key);
           });
-          executePatIdTask(this, tempfiles2, this.useMakefile);
+          executePatIdTask(this, tempfiles2, true, () => {});
           this.lastFiles = tempfiles2;
           break;
         }
@@ -235,6 +243,9 @@ export class DiscoPoPViewProvider implements vscode.WebviewViewProvider {
 
   drawStageOne() {
     const hasMakefile = getAllFilesInFolderWithPattern(this.folderPath, "Makefile").length > 0;
+    if(FileManager.getFiles().size === 0){
+      executeFileMappingTask(this, false, () => {this.drawWebView(); FileManager.reloadFileMapping();});
+    }
     return `
     <div class="tab">
     <button class="tablinks active" ${hasMakefile ? '' : ' style="width:100%"'} onclick="openTab(event, 'Manual')">Manually Select Files</button>
@@ -266,7 +277,7 @@ export class DiscoPoPViewProvider implements vscode.WebviewViewProvider {
   }
   drawStageThree() {
     return `<p>Using Makefile: ${this.useMakefile}</p>
-    <div>Identify reduction operations and execute dependence profiling<button class="task-btn" type="button" onclick="startTask('Dependence Profiling'); startTask('Identifying Reduction Operations')">Start</button></div>
+    <div>Identify reduction operations and execute dependence profiling<button class="task-btn" type="button" onclick="startTask('Dependence Profiling');startTask('Identifying Reduction Operations')">Start</button></div>
     <button class="next-btn" type="button" onclick="goToNextStage()">Continue</button>`;
   }
 
@@ -280,6 +291,7 @@ export class DiscoPoPViewProvider implements vscode.WebviewViewProvider {
   }
 
   drawWebView() {
+    console.log(this);
     console.log(this.currentStage);
     console.log(this.stages[this.currentStage]);
     //console.log(this.stages[this.currentStage].every((stage: any) => Object.values(stage).every( task => task === 2) ));
