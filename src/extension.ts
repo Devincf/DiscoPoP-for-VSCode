@@ -55,7 +55,7 @@ export function activate(context: vscode.ExtensionContext) {
 	//const folderPath = vscode.workspace.workspaceFolders![0].uri.path; //TODO: think about how to properly do this
 
 
-	const viewProvider: DiscoPoPViewProvider = new DiscoPoPViewProvider(sourceHighlighting);
+	const viewProvider: DiscoPoPViewProvider = new DiscoPoPViewProvider(sourceHighlighting, context);
 
 	//let filemapping = fs.readFileSync(folderPath + '/FileMapping.txt', 'utf8').split('\n').filter((el) => el !== '');
 	//filemapping = filemapping.map(str => str.trim().substr(2));

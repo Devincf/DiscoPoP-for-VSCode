@@ -55,10 +55,12 @@ export class DiscoPoPViewProvider implements vscode.WebviewViewProvider {
   sourceHighlighting: SourceHighlighting;
 
   filemappingTask!: NodeJS.Timeout | null;
+  context: vscode.ExtensionContext;
 
 
-  constructor(sourceHighlighting: SourceHighlighting) {
+  constructor(sourceHighlighting: SourceHighlighting, context: vscode.ExtensionContext) {
     this.sourceHighlighting = sourceHighlighting;
+    this.context = context;
     console.log("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAa");
 
     this.stages = [{ 'cu_gen': 0, 'dep_prof': 0, 'id_red_ops': 0 }, {}, { 'id_patterns': 0 }, {}, {}];
@@ -105,8 +107,8 @@ export class DiscoPoPViewProvider implements vscode.WebviewViewProvider {
       if (isDir) {
         const folderString = this.createHTMLFolder(filePath, depth + 1);
         if (folderString !== "") {
-          //returnString += `<div style="border: 1px solid black;margin-left:${depth*10}px;font-weight: bold;"><i class="gg-folder"></i>${file}<br> ${folderString} </div>`;
-          returnString += `<div style="border: 1px solid black;margin-left:${depth * 10}px;font-weight: bold;">${file}<br> ${folderString} </div>`;
+          returnString += `<div style="border: 1px solid black;margin-left:${depth*10}px;font-weight: bold;"><div onclick="reloadFiles()" class="icon"><i style="text-align:left" class="codicon codicon-folder">${file}</i><br> ${folderString} </div>`;
+          //returnString += `<div style="border: 1px solid black;margin-left:${depth * 10}px;font-weight: bold;">${file}<br> ${folderString} </div>`;
         }
       } else {
         let re = new RegExp(/\.(cpp|c|cc|cxx)$/g);
@@ -152,17 +154,17 @@ export class DiscoPoPViewProvider implements vscode.WebviewViewProvider {
           const tempfiles2 = [...this.currentFiles.keys()].filter((key, index) => {
             return this.currentFiles.get(key);
           });
-          if(message.task === 'CU Generation'){
+          if (message.task === 'CU Generation') {
             executeCUGenTask(this, tempfiles2, true, (num: number) => {
-              if(num === this.currentStage){
+              if (num === this.currentStage) {
                 this.currentStage++;
               }
             });
           }
-          if(message.task === 'Dependence Profiling'){
+          if (message.task === 'Dependence Profiling') {
             executeDepProfTask(this, tempfiles2, true, (num: number) => {
               executeRedOpTask(this, tempfiles2, true, (num: number) => {
-                if(num === this.currentStage){
+                if (num === this.currentStage) {
                   this.currentStage++;
                 }
               });
@@ -178,7 +180,7 @@ export class DiscoPoPViewProvider implements vscode.WebviewViewProvider {
           const tempfiles2 = [...this.currentFiles.keys()].filter((key, index) => {
             return this.currentFiles.get(key);
           });
-          executePatIdTask(this, tempfiles2, true, () => {});
+          executePatIdTask(this, tempfiles2, true, () => { });
           this.lastFiles = tempfiles2;
           break;
         }
@@ -216,7 +218,7 @@ export class DiscoPoPViewProvider implements vscode.WebviewViewProvider {
         }
       case 'reloadFiles':
         {
-          executeFileMappingTask(this, false, () => {FileManager.reloadFileMapping();});
+          executeFileMappingTask(this, false, () => { FileManager.reloadFileMapping(); });
           this.drawWebView();
           break;
         }
@@ -243,8 +245,8 @@ export class DiscoPoPViewProvider implements vscode.WebviewViewProvider {
 
   drawStageOne() {
     const hasMakefile = getAllFilesInFolderWithPattern(this.folderPath, "Makefile").length > 0;
-    if(FileManager.getFiles().size === 0){
-      executeFileMappingTask(this, false, () => {this.drawWebView(); FileManager.reloadFileMapping();});
+    if (FileManager.getFiles().size === 0) {
+      executeFileMappingTask(this, false, () => { this.drawWebView(); FileManager.reloadFileMapping(); });
     }
     return `
     <div class="tab">
@@ -253,7 +255,7 @@ export class DiscoPoPViewProvider implements vscode.WebviewViewProvider {
     </div>
 
     <div id="Manual" class="tabcontent" style="display:block">
-    <div id="reload" onclick="reloadFiles()">
+    <div id="reload" onclick="reloadFiles()" class="icon"><i class="codicon codicon-refresh"></i>
     </div>
       <div id="foldercontent">
         ${this.createHTMLFolder(this.folderPath, 0)}
@@ -294,14 +296,17 @@ export class DiscoPoPViewProvider implements vscode.WebviewViewProvider {
     console.log(this);
     console.log(this.currentStage);
     console.log(this.stages[this.currentStage]);
-    //console.log(this.stages[this.currentStage].every((stage: any) => Object.values(stage).every( task => task === 2) ));
-    console.log("DRAWING");
-    this.webview!.webview.html = `<!DOCTYPE html>
+    if (this.webview) {
+      const codiconsUri = this.webview.webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'node_modules', '@vscode/codicons', 'dist', 'codicon.css'));
+      //console.log(this.stages[this.currentStage].every((stage: any) => Object.values(stage).every( task => task === 2) ));
+      console.log("DRAWING");
+      this.webview.webview.html = `<!DOCTYPE html>
     <html lang="en">
     <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DiscoPoP Tasks</title>
+    <link href="${codiconsUri}" rel="stylesheet" />
     </head>
     <body>
     <script>
@@ -478,8 +483,8 @@ export class DiscoPoPViewProvider implements vscode.WebviewViewProvider {
     #reload{
       width:26px;
       height:26px;
-      background-color:white;
       float: right;
+      cursor: pointer;
     }
     .task-btn{
       margin-left: 20px;
@@ -519,9 +524,9 @@ export class DiscoPoPViewProvider implements vscode.WebviewViewProvider {
           <icon id="settings-icon">Settings</icon>
             <div class="dropdown-content">
             ${Array.from(Settings.getAll().entries()).map((value, index) => {
-      const test = `<input type="checkbox" value="${value[0]}" name="${value[0]}" ${value[1].enabled ? 'checked' : ''} onchange="changeSetting('${value[0]}')"><label for="${value[0]}">${value[1].text}</label><br>`;
-      return test;
-    }).join('')}
+        const test = `<input type="checkbox" value="${value[0]}" name="${value[0]}" ${value[1].enabled ? 'checked' : ''} onchange="changeSetting('${value[0]}')"><label for="${value[0]}">${value[1].text}</label><br>`;
+        return test;
+      }).join('')}
             </div>
           </div>
           <p id="stage-title">${this.stageTitle[this.currentStage]}</p>
@@ -546,6 +551,8 @@ export class DiscoPoPViewProvider implements vscode.WebviewViewProvider {
   </div>
 </div>
 </body></html>`;
+
+    }
     //TODO: CHANGE CURRENT STAGE !== 1 TO 3
 
     /*
