@@ -7,7 +7,7 @@ import { Pattern } from './pattern';
 import { getAllPatternFiles, nameFromPath } from './iomanip';
 
 import { Rainbow } from '@indot/rainbowvis';
-import { Settings } from './settings';
+//import { Settings } from './settings';
 import { FileManager, File } from './filemanager';
 import { Decorations } from './decorations';
 
@@ -316,7 +316,7 @@ export class SourceHighlighting {
     }
 
     refreshDiagnostics(doc: vscode.TextDocument, diagnosticCollection: vscode.DiagnosticCollection): void {
-        console.log("REFRESHING");
+        //console.log("REFRESHING");
         this.lastDoc = doc;
         this.lastCollection = diagnosticCollection;
 
@@ -336,7 +336,7 @@ export class SourceHighlighting {
             }
 
             diagnosticCollection.set(doc.uri, diagnostics);
-            console.log(diagnosticCollection);
+            //console.log(diagnosticCollection);
         }
 
     }
@@ -399,7 +399,7 @@ export class SourceHighlighting {
 
         context.subscriptions.push(
             vscode.workspace.onDidChangeTextDocument(e => {
-                console.log(e.contentChanges);
+                //console.log(e.contentChanges);
                 this.refreshDiagnostics(e.document, diagnosticCollection);
 
                 const newText = e.document.getText();
@@ -420,7 +420,7 @@ export class SourceHighlighting {
                     if (this.oldText !== '') {
 
                         if (this.oldText === newText) {
-                            console.log("SAME TEXT???");
+                            //console.log("SAME TEXT???");
                         }
 
 
@@ -491,6 +491,7 @@ export class SourceHighlighting {
                                     break;
                                 }
                             }
+                            console.log("Pragma removed at position " + newPragma);
                             const pos = e.document.positionAt(newPragma);
                             file.activateHighlightAtLine(pos.line + 1);
                             //this.removeHighlightAtLine(fileName,e.document.positionAt(newPragma).line);
@@ -544,7 +545,7 @@ export class SourceHighlighting {
                     }
                 });
             }
-            if (Settings.getValue('loopCounter')) {
+            if (vscode.workspace.getConfiguration("discopopvsc").get("loopCounter")) {
                 let decorationsArray: vscode.DecorationOptions[][] = [[], [], []];
                 file.heatmaps.forEach(heatmap => {
                     //console.log("Adding Heatmap");

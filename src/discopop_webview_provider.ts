@@ -75,7 +75,7 @@ export class DiscoPoPViewProvider implements vscode.WebviewViewProvider {
   }
 
   drawWebView() {
-    console.log("DRAWING");
+    //console.log("DRAWING");
     this.webview!.webview.html = `<!DOCTYPE html>
     <html lang="en">
     <head>

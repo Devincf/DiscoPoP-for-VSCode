@@ -8,7 +8,7 @@ import { FileManager } from '../misc/filemanager';
 
 export function executeDepProfTask(discopopView: DiscoPoPViewProvider, ifiles?: string[], showMessage: boolean = true, callback?: Function) {
     //copy from scripts to folder
-    console.log("executeDepProfTask");
+    //console.log("executeDepProfTask");
     if (discopopView.useMakefile) {
         executeMakefile(discopopView, showMessage, callback);
     } else {
@@ -36,49 +36,50 @@ function executeNormal(discopopView: DiscoPoPViewProvider, ifiles?: string[], sh
         createFolderIfNotExist(`${discopopView.folderPath}/discopop-tmp/${fileKey}`);
         
         const execStr = `${clang} -g -O0 -S -emit-llvm -fno-discard-value-names -Xclang -load -Xclang ${discopopView.buildPath}/libi/LLVMDPInstrumentation.so -mllvm -fm-path -mllvm ../FileMapping.txt -o ${outFileName}_dp.ll ${file}`;
-        console.log(execStr);
+        //console.log(execStr);
         exec(execStr, { cwd: `${discopopView.folderPath}/discopop-tmp/${fileKey}` }, (error, stdout, stderr) => {
             if (error) {
-                vscode.window.showErrorMessage(`Error during step 1 of identifying data dependencies in file ${outFileName}`);
+                //vscode.window.showErrorMessage(`Error during step 1 of identifying data dependencies in file ${outFileName}`);
                 console.log(`error: ${error.message}`);
                 discopopView.stages[0]['dep_prof'] = 1;
                 return;
             }
             const execStr = `${clang} ${outFileName}_dp.ll -o ${outFileName}_dp_run -L${discopopView.buildPath}/rtlib -lDiscoPoP_RT -lpthread`;
-            console.log(execStr);
+            //console.log(execStr);
             exec(execStr, { cwd: `${discopopView.folderPath}/discopop-tmp/${fileKey}` }, (error, stdout, stderr) => {
+
                 if (error) {
-                    vscode.window.showErrorMessage(`Error during step 2 of identifying data dependencies in file ${outFileName}`);
+                    //vscode.window.showErrorMessage(`Error during step 2 of identifying data dependencies in file ${outFileName}`);
                     console.log(`error: ${error.message}`);
                     discopopView.stages[0]['dep_prof'] = 1;
                     return;
                 }
-                if (stderr) {
-                    vscode.window.showErrorMessage(`(std)Error during step 2 of identifying data dependencies in file ${outFileName}`);
+                else if (stderr) {
+                    //vscode.window.showErrorMessage(`(std)Error during step 2 of identifying data dependencies in file ${outFileName}`);
                     console.log(`stderr: ${stderr}`);
                     discopopView.stages[0]['dep_prof'] = 1;
                     return;
                 }
                 const execStr = `./${outFileName}_dp_run`;
-                console.log(execStr);
+                //console.log(execStr);
                 exec(execStr, { cwd: `${discopopView.folderPath}/discopop-tmp/${fileKey}` }, (error, stdout, stderr) => {
+                    if(callback !== undefined){
+                        callback.call(null,2);
+                    }
                     if (error) {
-                        vscode.window.showErrorMessage(`Error during step 3 of identifying data dependencies in file ${outFileName}`);
+                        //vscode.window.showErrorMessage(`Error during step 3 of identifying data dependencies in file ${outFileName}`);
                         console.log(`error: ${error.message}`);
                         discopopView.stages[0]['dep_prof'] = 1;
                         return;
                     }
-                    if (stderr) {
-                        vscode.window.showErrorMessage(`(std)Error during step 3 of identifying data dependencies in file ${outFileName}`);
+                    else if (stderr) {
+                        //vscode.window.showErrorMessage(`(std)Error during step 3 of identifying data dependencies in file ${outFileName}`);
                         console.log(`stderr: ${stderr}`);
                         discopopView.stages[0]['dep_prof'] = 1;
                         return;
                     }
-                    if(showMessage){
+                    else if(showMessage){
                         vscode.window.showInformationMessage('Finished identifying data dependencies');
-                    }
-                    if(callback !== undefined){
-                        callback.call(null,2);
                     }
                     discopopView.stages[0]['dep_prof'] = 2;
                 });

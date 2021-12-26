@@ -227,7 +227,7 @@ export class FileManager {
         if (fs.existsSync(`${this.folderPath}/discopop-tmp/FileMapping.txt`)) {
             const filemapping = fs.readFileSync(`${this.folderPath}/discopop-tmp/FileMapping.txt`).toString();
             filemapping.split('\n').filter((el) => el !== '').forEach((fileStr) => {
-                console.log(fileStr);
+                //console.log(fileStr);
                 const fileStrSplit = fileStr.split('\t');
                 const path = fileStrSplit[1];
                 const newId = parseInt(fileStrSplit[0]);

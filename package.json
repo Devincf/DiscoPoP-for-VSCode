@@ -21,9 +21,7 @@
 		"onCommand:discopopvsc.dependprof",
 		"onCommand:discopopvsc.idredop",
 		"onCommand:discopopvsc.patid",
-		"onView:discopop_view",
-		"onLanguage:markdown",
-		"*"
+		"onView:discopop_view"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
@@ -84,17 +82,37 @@
 				"discopopvsc.build_path": {
 					"type": "string",
 					"default": "/home/lumi/code/ba/discopop/build",
-					"description": "Specifies the name of the build folder"
+					"description": "Specifies the name of the DiscoPoP build folder"
 				},
 				"discopopvsc.scripts_path": {
 					"type": "string",
 					"default": "/home/lumi/code/ba/discopop/scripts",
-					"description": "Specifies the name of the scripts folder"
+					"description": "Specifies the name of the DiscoPoP scripts folder"
 				},
 				"discopopvsc.clang": {
 					"type": "string",
 					"default": "clang++-8",
 					"description": "Specifies the clang++ executable"
+				},
+				"discopopvsc.loopCounter": {
+					"type": "boolean",
+					"default": true,
+					"description": "Determines whether loop heatmaps will be shown"
+				},
+				"discopopvsc.autoPipeline": {
+					"type": "boolean",
+					"default": true,
+					"description": "Run the entire pipeline after selecting files?"
+				},
+				"discopopvsc.autoFilemapping": {
+					"type": "boolean",
+					"default": false,
+					"description": "Automatically execute the Filemapping task in the background"
+				},
+				"discopopvsc.allFiles": {
+					"type": "boolean",
+					"default": false,
+					"description": "List all files in the file selection"
 				}
 			}
 		}

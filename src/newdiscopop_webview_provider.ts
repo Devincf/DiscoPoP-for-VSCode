@@ -245,7 +245,7 @@ export class DiscoPoPViewProvider implements vscode.WebviewViewProvider {
   }
 
   drawWebView() {
-    console.log(this.stages[this.currentStage]);
+    //console.log(this.stages[this.currentStage]);
     //console.log(this.stages[this.currentStage].every((stage: any) => Object.values(stage).every( task => task === 2) ));
     console.log("DRAWING");
     this.webview!.webview.html = `<!DOCTYPE html>

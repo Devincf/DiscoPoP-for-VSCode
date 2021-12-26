@@ -26,7 +26,7 @@ export function nameFromPath(folderPath: string | undefined, filePath: string): 
   //const outFileName = filePath.match(re)![1];
   let re = new RegExp(folderPath + "\/(.*)[\.]");
   const outFileName = filePath.match(re)![1];
-  console.log(`Called nameFromPath with folderPath: ${folderPath} and filePath: ${filePath}  and got result ${outFileName}`);
+  //console.log(`Called nameFromPath with folderPath: ${folderPath} and filePath: ${filePath}  and got result ${outFileName}`);
   return outFileName;
 }
 

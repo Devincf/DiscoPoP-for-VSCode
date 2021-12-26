@@ -8,7 +8,7 @@ import { FileManager } from '../misc/filemanager';
 
 export function executeCUGenTask(discopopView: DiscoPoPViewProvider, ifiles?: string[], showMessage: boolean = true, callback?: Function) {
     //copy from scripts to folder
-    console.log("executeCUGenTask");
+    //console.log("executeCUGenTask");
     if (discopopView.useMakefile) {
         executeMakefile(discopopView, showMessage, callback);
     } else {
@@ -32,7 +32,7 @@ function executeNormal(discopopView: DiscoPoPViewProvider, ifiles?: string[], sh
         const outFileName = test![0];
 
         const clang = vscode.workspace.getConfiguration("discopopvsc").get("clang");
-        console.log(file.match(re));
+        //console.log(file.match(re));
 
         //let fileKey = Configuration.getFileUuid(file);
         let fileKey = FileManager.getFileId(file);
@@ -42,23 +42,8 @@ function executeNormal(discopopView: DiscoPoPViewProvider, ifiles?: string[], sh
         createFolderIfNotExist(`${discopopView.folderPath}/discopop-tmp/${fileKey}`);
 
         const execStr = `${clang} -g -O0 -fno-discard-value-names -Xclang -load -Xclang ${discopopView.buildPath}/libi/LLVMCUGeneration.so -mllvm -fm-path -mllvm ../FileMapping.txt -c ${file} -o ${outFileName}`;
-        console.log(execStr);
+        //console.log(execStr);
         exec(execStr, { cwd: `${discopopView.folderPath}/discopop-tmp/${fileKey}` }, (error, stdout, stderr) => {
-            if (error) {
-                vscode.window.showErrorMessage(`Error generating CU for file ${outFileName} : ${error}`);
-                console.log(`error: ${error.message}`);
-                discopopView.stages[0]['cu_gen'] = 1;
-                return;
-            }
-            if (stderr) {
-                vscode.window.showErrorMessage(`Error generating CU for file ${outFileName} : ${stderr}`);
-                console.log(`error: ${stderr}`);
-                discopopView.stages[0]['cu_gen'] = 1;
-                return;
-            }
-            if (showMessage) {
-                vscode.window.showInformationMessage('Finished CU Generation');
-            }
             if (callback !== undefined) {
                 callback.call(null,1);
             }
@@ -71,8 +56,21 @@ function executeNormal(discopopView: DiscoPoPViewProvider, ifiles?: string[], sh
                 //Configuration.getConfigValue('files', fileKey).dataxml = a;
                 //Configuration.writeToFile();
             }
-
-
+            if (error) {
+                //vscode.window.showErrorMessage(`Error generating CU for file ${outFileName} : ${error}`);
+                console.log(`error: ${error.message}`);
+                discopopView.stages[0]['cu_gen'] = 1;
+                return;
+            }
+            else if (stderr) {
+                //vscode.window.showErrorMessage(`Error generating CU for file ${outFileName} : ${stderr}`);
+                console.log(`error: ${stderr}`);
+                discopopView.stages[0]['cu_gen'] = 1;
+                return;
+            }
+            else if (showMessage) {
+                vscode.window.showInformationMessage('Finished CU Generation');
+            }
             discopopView.stages[0]['cu_gen'] = 2;
         });
     });
