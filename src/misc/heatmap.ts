@@ -1,6 +1,3 @@
-import * as vscode from 'vscode';
-
-
 export class Heatmap{
     public startLine: number;
     public endLine: number;

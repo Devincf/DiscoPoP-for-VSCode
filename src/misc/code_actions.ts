@@ -1,6 +1,5 @@
 import * as vscode from 'vscode';
 import { FileManager } from './filemanager';
-import { nameFromPath } from './iomanip';
 import { SourceHighlighting } from './source_highlighting';
 export class CodeActions implements vscode.CodeActionProvider {
 

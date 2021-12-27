@@ -23,6 +23,7 @@ function executeNormal(discopopView: DiscoPoPViewProvider, ifiles?: string[], sh
     } else {
         files = ifiles;
     }
+    const buildPath = vscode.workspace.getConfiguration("discopopvsc").get("build_path");
     files.forEach(async (file, index) => {
         console.log(`Dependency Profiling for file (${index}) ${file}`);
         let re = new RegExp(/[^\\\/]+(?=\.[\w]+$)|[^\\\/]+$/g);
@@ -35,29 +36,26 @@ function executeNormal(discopopView: DiscoPoPViewProvider, ifiles?: string[], sh
         createFolderIfNotExist(`${discopopView.folderPath}/discopop-tmp`);
         createFolderIfNotExist(`${discopopView.folderPath}/discopop-tmp/${fileKey}`);
         
-        const execStr = `${clang} -g -O0 -S -emit-llvm -fno-discard-value-names -Xclang -load -Xclang ${discopopView.buildPath}/libi/LLVMDPInstrumentation.so -mllvm -fm-path -mllvm ../FileMapping.txt -o ${outFileName}_dp.ll ${file}`;
+        const execStr = `${clang} -g -O0 -S -emit-llvm -fno-discard-value-names -Xclang -load -Xclang ${buildPath}/libi/LLVMDPInstrumentation.so -mllvm -fm-path -mllvm ../FileMapping.txt -o ${outFileName}_dp.ll ${file}`;
         //console.log(execStr);
         exec(execStr, { cwd: `${discopopView.folderPath}/discopop-tmp/${fileKey}` }, (error, stdout, stderr) => {
             if (error) {
                 //vscode.window.showErrorMessage(`Error during step 1 of identifying data dependencies in file ${outFileName}`);
                 console.log(`error: ${error.message}`);
-                discopopView.stages[0]['dep_prof'] = 1;
                 return;
             }
-            const execStr = `${clang} ${outFileName}_dp.ll -o ${outFileName}_dp_run -L${discopopView.buildPath}/rtlib -lDiscoPoP_RT -lpthread`;
+            const execStr = `${clang} ${outFileName}_dp.ll -o ${outFileName}_dp_run -L${buildPath}/rtlib -lDiscoPoP_RT -lpthread`;
             //console.log(execStr);
             exec(execStr, { cwd: `${discopopView.folderPath}/discopop-tmp/${fileKey}` }, (error, stdout, stderr) => {
 
                 if (error) {
                     //vscode.window.showErrorMessage(`Error during step 2 of identifying data dependencies in file ${outFileName}`);
                     console.log(`error: ${error.message}`);
-                    discopopView.stages[0]['dep_prof'] = 1;
                     return;
                 }
                 else if (stderr) {
                     //vscode.window.showErrorMessage(`(std)Error during step 2 of identifying data dependencies in file ${outFileName}`);
                     console.log(`stderr: ${stderr}`);
-                    discopopView.stages[0]['dep_prof'] = 1;
                     return;
                 }
                 const execStr = `./${outFileName}_dp_run`;
@@ -69,29 +67,27 @@ function executeNormal(discopopView: DiscoPoPViewProvider, ifiles?: string[], sh
                     if (error) {
                         //vscode.window.showErrorMessage(`Error during step 3 of identifying data dependencies in file ${outFileName}`);
                         console.log(`error: ${error.message}`);
-                        discopopView.stages[0]['dep_prof'] = 1;
                         return;
                     }
                     else if (stderr) {
                         //vscode.window.showErrorMessage(`(std)Error during step 3 of identifying data dependencies in file ${outFileName}`);
                         console.log(`stderr: ${stderr}`);
-                        discopopView.stages[0]['dep_prof'] = 1;
                         return;
                     }
                     else if(showMessage){
                         vscode.window.showInformationMessage('Finished identifying data dependencies');
                     }
-                    discopopView.stages[0]['dep_prof'] = 2;
                 });
             });
         });
     });
 }
 function executeMakefile(discopopView: DiscoPoPViewProvider, showMessage: boolean, callback?: Function)  {
-    const execStr = `python3 -m Makefile_Analyzer --target-project=${discopopView.folderPath} --target-makefile=${discopopView.folderPath}/Makefile --dp-path=${discopopView.discopopPath} --dp-build-path=${discopopView.buildPath} --exec-mode=dep --clang-bin=clang-8 --clang++-bin=clang++-8 --llvm-link-bin=llvm-link-8`;
-    //TODO: REMOVE AFTER FIX
+    const discopopPath = vscode.workspace.getConfiguration("discopopvsc").get("path");
+    const buildPath = vscode.workspace.getConfiguration("discopopvsc").get("build_path");
+    const execStr = `python3 -m Makefile_Analyzer --target-project=${discopopView.folderPath} --target-makefile=${discopopView.folderPath}/Makefile --dp-path=${discopopPath} --dp-build-path=${buildPath} --exec-mode=dep --clang-bin=clang-8 --clang++-bin=clang++-8 --llvm-link-bin=llvm-link-8`;
 
-    exec(execStr, { cwd: discopopView.discopopPath + "/discopop_makefile" }, (error, stdout, stderr) => {
+    exec(execStr, { cwd: discopopPath + "/discopop_makefile" }, (error, stdout, stderr) => {
         //create highlight for each obj
         const execStr = `make -f tmp_makefile.mk && ./out && cd ..`;
         exec(execStr, { cwd: discopopView.folderPath }, (error, stdout, stderr) => {
@@ -101,7 +97,6 @@ function executeMakefile(discopopView: DiscoPoPViewProvider, showMessage: boolea
             if(callback !== undefined){
                 callback.call(null,2);
             }
-            discopopView.stages[0]['dep_prof'] = 2;
         });
     });
 }

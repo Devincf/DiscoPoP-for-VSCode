@@ -18,26 +18,6 @@ export function createFolderIfNotExist(path: string): boolean {
   return false;
 }
 
-export function nameFromPath(folderPath: string | undefined, filePath: string): string {
-  if (folderPath === undefined) {
-    return "";
-  }
-  //let re = new RegExp(folderPath + "\/(.*)");
-  //const outFileName = filePath.match(re)![1];
-  let re = new RegExp(folderPath + "\/(.*)[\.]");
-  const outFileName = filePath.match(re)![1];
-  //console.log(`Called nameFromPath with folderPath: ${folderPath} and filePath: ${filePath}  and got result ${outFileName}`);
-  return outFileName;
-}
-
-export function getAllPatternFiles(folderPath: string) {
-  const testFolder = folderPath + '/discopop-tmp';
-
-  const files = readdirSync(testFolder);
-  let re = new RegExp("(.*)_patterns.json");
-  return files.filter(file => re.test(file)).map(file => file.match(re)![1]);
-}
-
 export function getAllFilesInFolderWithPattern(folderPath: string, pattern: string){
 
   const files = readdirSync(folderPath);

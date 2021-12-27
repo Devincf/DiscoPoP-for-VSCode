@@ -56,9 +56,6 @@ export function activate(context: vscode.ExtensionContext) {
 
 
 	const viewProvider: DiscoPoPViewProvider = new DiscoPoPViewProvider(sourceHighlighting, context);
-
-	//let filemapping = fs.readFileSync(folderPath + '/FileMapping.txt', 'utf8').split('\n').filter((el) => el !== '');
-	//filemapping = filemapping.map(str => str.trim().substr(2));
 	vscode.window.registerWebviewViewProvider('discopop_view', viewProvider);
 
 

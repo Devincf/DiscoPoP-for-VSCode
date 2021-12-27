@@ -24,6 +24,7 @@ function executeNormal(discopopView: DiscoPoPViewProvider, ifiles?: string[], sh
     } else {
         files = ifiles;
     }
+    const buildPath = vscode.workspace.getConfiguration("discopopvsc").get("build_path");
     files.forEach(async (file, index) => {
         console.log(`CU Generation for file (${index}) ${file}`);
         //let re = new RegExp(discopopView.folderPath + "(.*)\/[\.]");
@@ -41,7 +42,7 @@ function executeNormal(discopopView: DiscoPoPViewProvider, ifiles?: string[], sh
         createFolderIfNotExist(`${discopopView.folderPath}/discopop-tmp`);
         createFolderIfNotExist(`${discopopView.folderPath}/discopop-tmp/${fileKey}`);
 
-        const execStr = `${clang} -g -O0 -fno-discard-value-names -Xclang -load -Xclang ${discopopView.buildPath}/libi/LLVMCUGeneration.so -mllvm -fm-path -mllvm ../FileMapping.txt -c ${file} -o ${outFileName}`;
+        const execStr = `${clang} -g -O0 -fno-discard-value-names -Xclang -load -Xclang ${buildPath}/libi/LLVMCUGeneration.so -mllvm -fm-path -mllvm ../FileMapping.txt -c ${file} -o ${outFileName}`;
         //console.log(execStr);
         exec(execStr, { cwd: `${discopopView.folderPath}/discopop-tmp/${fileKey}` }, (error, stdout, stderr) => {
             if (callback !== undefined) {
@@ -59,31 +60,28 @@ function executeNormal(discopopView: DiscoPoPViewProvider, ifiles?: string[], sh
             if (error) {
                 //vscode.window.showErrorMessage(`Error generating CU for file ${outFileName} : ${error}`);
                 console.log(`error: ${error.message}`);
-                discopopView.stages[0]['cu_gen'] = 1;
                 return;
             }
             else if (stderr) {
                 //vscode.window.showErrorMessage(`Error generating CU for file ${outFileName} : ${stderr}`);
                 console.log(`error: ${stderr}`);
-                discopopView.stages[0]['cu_gen'] = 1;
                 return;
             }
             else if (showMessage) {
                 vscode.window.showInformationMessage('Finished CU Generation');
             }
-            discopopView.stages[0]['cu_gen'] = 2;
         });
     });
 }
 
 function executeMakefile(discopopView: DiscoPoPViewProvider, showMessage: boolean, callback?: Function) {
-    createFolderIfNotExist(discopopView.folderPath+ '/mkfile');
-    const execStr = `python3 -m Makefile_Analyzer --target-project=${discopopView.folderPath} --target-makefile=${discopopView.folderPath}/Makefile --dp-path=${discopopView.discopopPath} --dp-build-path=${discopopView.buildPath} --exec-mode=cu_gen --clang-bin=clang-8 --clang++-bin=clang++-8 --llvm-link-bin=llvm-link-8`;
-    //TODO: REMOVE AFTER FIX
+    const discopopPath = vscode.workspace.getConfiguration("discopopvsc").get("path");
+    const buildPath = vscode.workspace.getConfiguration("discopopvsc").get("build_path");
+    const execStr = `python3 -m Makefile_Analyzer --target-project=${discopopView.folderPath} --target-makefile=${discopopView.folderPath}/Makefile --dp-path=${discopopPath} --dp-build-path=${buildPath} --exec-mode=cu_gen --clang-bin=clang-8 --clang++-bin=clang++-8 --llvm-link-bin=llvm-link-8`;
 
     //const filesToMove = ["Data.xml", "OriginalVariables.txt", "DP_CUIDCounter.txt", "out"];
 
-    exec(execStr, { cwd: discopopView.discopopPath + "/discopop_makefile" }, (error, stdout, stderr) => {
+    exec(execStr, { cwd: discopopPath + "/discopop_makefile" }, (error, stdout, stderr) => {
         //create highlight for each obj
         const execStr = `make -f tmp_makefile.mk && ./out && cd ..`;
         exec(execStr, { cwd: discopopView.folderPath }, (error, stdout, stderr) => {
@@ -101,8 +99,6 @@ function executeMakefile(discopopView: DiscoPoPViewProvider, showMessage: boolea
                 }
             });
 */
-
-            discopopView.stages[0]['cu_gen'] = 2;
         });
     });
 }

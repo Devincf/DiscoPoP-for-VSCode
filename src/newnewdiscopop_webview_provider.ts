@@ -11,18 +11,13 @@ import { executeFileMappingTask } from './tasks/task_file_mapping';
 import { executePatIdTask } from './tasks/task_pat_id';
 import { executeRedOpTask } from './tasks/task_red_op';
 import { readdirSync } from 'fs';
-import { create } from 'domain';
-import { generateKeyPairSync } from 'crypto';
 //import { Settings } from './misc/settings';
 import { FileManager } from './misc/filemanager';
 
 export class DiscoPoPViewProvider implements vscode.WebviewViewProvider {
   folderPath: string;
-  buildPath: string;
-  discopopPath: string;
 
   currentStage: number = 0;
-  stages: any[] = [];
   stageDescription: string[] = [
     'Please either select the files that you wish to analyze using DiscoPoP. These Files will be saved and used for every future step. <br><br><br>Alternatively you can also use a Makefile, if you have a working one.',
     'Blablabla this is a description text that describes what the current stage is, what id does and provides a link for further reading',
@@ -40,23 +35,18 @@ export class DiscoPoPViewProvider implements vscode.WebviewViewProvider {
   ];
 
   useMakefile: boolean = false;
+  init: boolean = false;
+  executingTask: boolean = false;
 
-
-  init: boolean;
   webview: vscode.WebviewView | undefined;
   interval!: NodeJS.Timeout;
 
-
-  dataxml: null | string = null;
-
-  lastFiles: string[] = [];
   currentFiles: Map<string, boolean>;
 
   sourceHighlighting: SourceHighlighting;
 
   filemappingTask!: NodeJS.Timeout | null;
   context: vscode.ExtensionContext;
-  executingTask: boolean = false;
 
 
   constructor(sourceHighlighting: SourceHighlighting, context: vscode.ExtensionContext) {
@@ -64,39 +54,28 @@ export class DiscoPoPViewProvider implements vscode.WebviewViewProvider {
     this.context = context;
     //console.log("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAa");
 
-    this.stages = [{ 'cu_gen': 0, 'dep_prof': 0, 'id_red_ops': 0 }, {}, { 'id_patterns': 0 }, {}, {}];
-
     this.currentFiles = new Map<string, boolean>();
 
     //check for existing files for stages
 
     this.folderPath = vscode.workspace.workspaceFolders![0].uri.path; //TODO: think about how to properly do this    ;
-    this.buildPath = `${vscode.workspace.getConfiguration("discopopvsc").get("build_path")}/`;
-    this.discopopPath = `${vscode.workspace.getConfiguration("discopopvsc").get("path")}`;
+
+    if(fs.existsSync(`${this.folderPath}/Makefile`)){
+      this.useMakefile = true;
+    }
 
     this.sourceHighlighting.setView(this);
 
-    if (getAllFilesInFolderWithPattern(this.folderPath + '/discopop-tmp', "(.*)dp.ll").length > 0) {
-      this.stages[0]['dep_prof'] = 2;
-    }
-    if (getAllFilesInFolderWithPattern(this.folderPath + '/discopop-tmp', "(.*)Data.xml").length > 0) {
-      this.stages[0]['cu_gen'] = 2;
-    }
     /*Configuration.getFiles()?.forEach((value, key) => {
       const path = `${this.folderPath}/discopop-tmp/${key}/`;
       if (fs.existsSync(path + 'Data.xml')) {
         Configuration.getConfigValue('files', key).dataxml = fs.readFileSync(path + 'Data.xml').toString();
       }
     });*/
-    if (getAllFilesInFolderWithPattern(this.folderPath + '/discopop-tmp', "(.*)red.bc").length > 0) {
-      this.stages[0]['id_red_ops'] = 2;
-    }
 
     /*if(getAllFilesInFolderWithPattern(this.folderPath, "(.*)Makefile").length > 0){
       this.useMakefile = true;
     }*/
-
-    this.init = false;
   }
 
   createHTMLFolder(path: string, depth: number) {
@@ -139,27 +118,26 @@ export class DiscoPoPViewProvider implements vscode.WebviewViewProvider {
 
   onReceiveMessage(message: any) {
     switch (message.command) {
-      case 'createFileMapping':
-        executeFileMappingTask(this);
-        this.webview!.webview.html = this.webview!.webview.html;
-        break;
       case 'runPipeline': {
         const tempfiles2 = [...this.currentFiles.keys()].filter((key, index) => {
           return this.currentFiles.get(key);
         });
         this.executingTask = true;
         this.currentStage = 1;
+        this.drawWebView();
         executeCUGenTask(this, tempfiles2, true, (num: number) => {
           if (num === this.currentStage) {
             this.currentStage++;
+            this.drawWebView();
             executeDepProfTask(this, tempfiles2, true, (num: number) => {
               executeRedOpTask(this, tempfiles2, true, (num: number) => {
                 if (num === this.currentStage) {
                   this.currentStage++;
+                  this.drawWebView();
                   executePatIdTask(this, tempfiles2, true, () => { 
                     this.executingTask = false;
+                    this.drawWebView();
                   });
-                  this.lastFiles = tempfiles2;
                 }
               });
             });
@@ -175,7 +153,6 @@ export class DiscoPoPViewProvider implements vscode.WebviewViewProvider {
               this.taskMap[task.name](this, tempfiles);
             }
           });*/
-          const tempfiles = getFiles(this.folderPath).filter(file => file.endsWith('.c') || file.endsWith('.cpp') || file.endsWith('.cc'));
           const tempfiles2 = [...this.currentFiles.keys()].filter((key, index) => {
             return this.currentFiles.get(key);
           });
@@ -198,13 +175,11 @@ export class DiscoPoPViewProvider implements vscode.WebviewViewProvider {
               });
             });
           }
-          this.lastFiles = tempfiles2;
         }
         break;
       case 'identifyPatterns':
         {
           //const tempfiles = message.files.filter((m: any) => m.selected).map((m: any) => m.file.path);
-          const tempfiles = getFiles(this.folderPath).filter(file => file.endsWith('.c') || file.endsWith('.cpp') || file.endsWith('.cc'));
           const tempfiles2 = [...this.currentFiles.keys()].filter((key, index) => {
             return this.currentFiles.get(key);
           });
@@ -212,7 +187,6 @@ export class DiscoPoPViewProvider implements vscode.WebviewViewProvider {
           executePatIdTask(this, tempfiles2, true, () => { 
             this.executingTask = false;
           });
-          this.lastFiles = tempfiles2;
           break;
         }
       case 'setUseMakefile': {
@@ -242,7 +216,7 @@ export class DiscoPoPViewProvider implements vscode.WebviewViewProvider {
   }
 
   drawLoadingScreen(){
-    return 'LOADING';
+    return `Currently running task ${this.stageTitle[this.currentStage]} [${this.currentStage}/3].`;
   }
 
   drawCurrentStage() {
@@ -292,19 +266,16 @@ export class DiscoPoPViewProvider implements vscode.WebviewViewProvider {
   }
   drawStageTwo() {
     return `<p>Using Makefile: ${this.useMakefile}</p>
-    <div>Generate Computational <button class="task-btn" type="button" onclick="startTask('CU Generation')">Start</button></div>
-    <button class="next-btn" type="button" onclick="goToNextStage()">Continue</button>`;
+    <button class="next-btn" type="button" onclick="startTask('CU Generation')">Continue</button>`;
   }
   drawStageThree() {
     return `<p>Using Makefile: ${this.useMakefile}</p>
-    <div>Identify reduction operations and execute dependence profiling<button class="task-btn" type="button" onclick="startTask('Dependence Profiling');startTask('Identifying Reduction Operations')">Start</button></div>
-    <button class="next-btn" type="button" onclick="goToNextStage()">Continue</button>`;
+    <button class="next-btn" type="button" onclick="startTask('Dependence Profiling')">Continue</button>`;
   }
 
   drawStageFour() {
     return `<p>Using Makefile: ${this.useMakefile}</p>
-    <div>Identify Patterns <button class="task-btn" type="button" onclick="identifyPatterns()">Start</button></div>
-    <button class="next-btn" type="button" onclick="goToNextStage()">Continue</button>`;
+    <button class="next-btn" type="button" onclick="identifyPatterns()">Continue</button>`;
   }
   drawStageFive() {
     return 'idk stage 5';
@@ -335,9 +306,6 @@ export class DiscoPoPViewProvider implements vscode.WebviewViewProvider {
     function startTask(taskName){
       console.log(taskName);
       vscode.postMessage({command: 'startTasks', files: Array.from(document.querySelectorAll(".discopop_file")).map(el => { return {'file': { 'name': el.children[1].innerText, 'path': el.children[1].attributes.path.value }, 'selected': el.children[0].checked}}), task: taskName});
-    }
-    function createFileMapping(){
-      vscode.postMessage({command: 'createFileMapping'});
     }
     function identifyPatterns(){
       vscode.postMessage({command: 'identifyPatterns', files: Array.from(document.querySelectorAll(".discopop_file")).map(el => { return {'file': { 'name': el.children[1].innerText, 'path': el.children[1].attributes.path.value }, 'selected': el.children[0].checked}}), tasks: Array.from(document.querySelectorAll(".discopop_task")).map(el => { return { 'name': el.children[1].innerText, 'selected': el.children[0].checked}})});
@@ -540,7 +508,7 @@ export class DiscoPoPViewProvider implements vscode.WebviewViewProvider {
           <p id="stage-title">${this.stageTitle[this.currentStage]}</p>
       </div>
       <div id="stage-circles">
-          <span style="margin-left:35px" class="dot dot-finished ${this.currentStage === 0 ? 'dot-selected' : ''}" onClick="goToStage(0)"></span>
+          <span style="margin-left:35px" class="dot ${this.currentStage === 0 ? 'dot-selected' : ''}" onClick="goToStage(0)"></span>
           <span class="dot ${this.currentStage === 1 ? 'dot-selected' : ''}" onClick="goToStage(1)"></span>
           <span class="dot ${this.currentStage === 2 ? 'dot-selected' : ''}" onClick="goToStage(2)"></span>
           <span class="dot ${this.currentStage === 3 ? 'dot-selected' : ''}" onClick="goToStage(3)"></span>
@@ -561,8 +529,6 @@ export class DiscoPoPViewProvider implements vscode.WebviewViewProvider {
 </body></html>`;
 
     }
-    //TODO: CHANGE CURRENT STAGE !== 1 TO 3
-
     /*
 </p>
 <p id="current-information-label">

@@ -15,13 +15,7 @@
 		"url": "https://github.com/Devincf/DiscoPoP-for-VSCode.git"
 	},
 	"activationEvents": [
-		"onCommand:discopopvsc.helloWorld",
-		"onCommand:discopopvsc.fmap",
-		"onCommand:discopopvsc.cugen",
-		"onCommand:discopopvsc.dependprof",
-		"onCommand:discopopvsc.idredop",
-		"onCommand:discopopvsc.patid",
-		"onView:discopop_view"
+		"*"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
@@ -146,8 +140,6 @@
 		"vscode-test": "^1.5.0"
 	},
 	"dependencies": {
-		"@indot/rainbowvis": "^1.0.2",
-		"@vscode/codicons": "^0.0.27",
-		"uuid": "^8.3.2"
+		"@vscode/codicons": "^0.0.27"
 	}
 }

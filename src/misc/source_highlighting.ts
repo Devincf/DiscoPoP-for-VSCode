@@ -1,15 +1,12 @@
 import * as fs from 'fs';
 import * as vscode from 'vscode';
 import { DiscoPoPViewProvider } from '../newnewdiscopop_webview_provider';
-import { executePatIdTask } from '../tasks/task_pat_id';
 import { Heatmap } from './heatmap';
 import { Pattern } from './pattern';
-import { getAllPatternFiles, nameFromPath } from './iomanip';
-
-import { Rainbow } from '@indot/rainbowvis';
 //import { Settings } from './settings';
-import { FileManager, File } from './filemanager';
+import { FileManager } from './filemanager';
 import { Decorations } from './decorations';
+import { File } from './file';
 
 
 export class SourceHighlighting {
@@ -45,6 +42,7 @@ export class SourceHighlighting {
                 this.triggerUpdateDecorations();
             }
         }, null, extContext.subscriptions);
+
 
         vscode.workspace.onDidChangeTextDocument(event => {
             if (activeEditor && event.document === activeEditor.document) {
@@ -551,7 +549,7 @@ export class SourceHighlighting {
                     //console.log("Adding Heatmap");
                     if (heatmap.active) {
                         const heatmapLevel = this.getHeatmapLevelFromAmount(heatmap.level);
-                        const decoration = { range: new vscode.Range(new vscode.Position(heatmap.startLine - 1, 0), new vscode.Position(heatmap.endLine, 0)), hoverMessage: "Loop executed: " + heatmap.level + " times" };
+                        const decoration = { range: new vscode.Range(new vscode.Position(heatmap.startLine - 1, 0), new vscode.Position(heatmap.endLine-1, 1000)), hoverMessage: "Loop executed: " + heatmap.level + " times" };
                         decorationsArray[heatmapLevel].push(decoration);
                     }
                 });
@@ -589,7 +587,6 @@ export class SourceHighlighting {
     setView(view: DiscoPoPViewProvider) {
         this.discopopView = view;
         this.loadData();
-        const patternFiles = getAllPatternFiles(view.folderPath);
         //patternFiles.forEach(file => { this.loadPatterns(file); this.loadLoopHeatmap(file); });
         //this.loadPatterns(patternFiles);
     }
