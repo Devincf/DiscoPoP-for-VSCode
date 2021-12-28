@@ -20,18 +20,16 @@ export class DiscoPoPViewProvider implements vscode.WebviewViewProvider {
   currentStage: number = 0;
   stageDescription: string[] = [
     'Please either select the files that you wish to analyze using DiscoPoP. These Files will be saved and used for every future step. <br><br><br>Alternatively you can also use a Makefile, if you have a working one.',
-    'Blablabla this is a description text that describes what the current stage is, what id does and provides a link for further reading',
-    'Blablabla this is a description text that describes what the current stage is, what id does and provides a link for further reading',
-    'Blablabla this is a description text that describes what the current stage is, what id does and provides a link for further reading',
-    'Blablabla this is a description text that describes what the current stage is, what id does and provides a link for further reading'
+    'In the decomposition stage DiscoPoP performs a static analysis of the programs control-flow.',
+    'In this stage DiscoPoP uses a low-overhead profiler to determine data dependences found within the program.',
+    'In this stage DiscoPoP uses a matching procedure to identify potential design patterns.'
   ];
 
   stageTitle: string[] = [
     'File Selection',
     'Decomposition',
     'Dependence Profiling',
-    'Pattern Identification',
-    'Pattern Ranking'
+    'Pattern Identification'
   ];
 
   useMakefile: boolean = false;
@@ -230,8 +228,6 @@ export class DiscoPoPViewProvider implements vscode.WebviewViewProvider {
         return this.drawStageThree();
       case 3:
         return this.drawStageFour();
-      case 4:
-        return this.drawStageFive();
     }
   }
 
@@ -256,10 +252,8 @@ export class DiscoPoPViewProvider implements vscode.WebviewViewProvider {
 
     <div id="Makefile" class="tabcontent">
       <h3>Use Makefile</h3>
-      <p>By selecting this, you are making use of the following Makefile:</p>
-      <p>Hier Makefile maybe anzeigen? ansonsten verlinken?</p>
-      <p>Please keep in mind that DiscoPoP currently only supports certainly formatted Makefiles. 
-      If yours does not work then please contact Lukas</p>
+      <p>By selecting this, you are making use of a Makefile</p>
+      <p>Please keep in mind that DiscoPoP currently only supports certainly formatted Makefiles.</p>
     </div>
     <button class="next-btn" type="button" onclick="${vscode.workspace.getConfiguration("discopopvsc").get("autoPipeline") ? 'runPipeline()' : 'goToNextStage()'}">Continue</button>
     `;
@@ -277,10 +271,7 @@ export class DiscoPoPViewProvider implements vscode.WebviewViewProvider {
     return `<p>Using Makefile: ${this.useMakefile}</p>
     <button class="next-btn" type="button" onclick="identifyPatterns()">Continue</button>`;
   }
-  drawStageFive() {
-    return 'idk stage 5';
-  }
-
+  
   drawWebView() {
     //console.log(this);
     //console.log(this.currentStage);
@@ -508,11 +499,10 @@ export class DiscoPoPViewProvider implements vscode.WebviewViewProvider {
           <p id="stage-title">${this.stageTitle[this.currentStage]}</p>
       </div>
       <div id="stage-circles">
-          <span style="margin-left:35px" class="dot ${this.currentStage === 0 ? 'dot-selected' : ''}" onClick="goToStage(0)"></span>
+          <span style="margin-left:45px" class="dot ${this.currentStage === 0 ? 'dot-selected' : ''}" onClick="goToStage(0)"></span>
           <span class="dot ${this.currentStage === 1 ? 'dot-selected' : ''}" onClick="goToStage(1)"></span>
           <span class="dot ${this.currentStage === 2 ? 'dot-selected' : ''}" onClick="goToStage(2)"></span>
           <span class="dot ${this.currentStage === 3 ? 'dot-selected' : ''}" onClick="goToStage(3)"></span>
-          <span class="dot ${this.currentStage === 4 ? 'dot-selected' : ''}" onClick="goToStage(4)"></span>
       </div>
   </div>
 </div>

@@ -4,7 +4,7 @@ import { SourceHighlighting } from './source_highlighting';
 export class CodeActions implements vscode.CodeActionProvider {
 
 	public static readonly providedCodeActionKinds = [
-		vscode.CodeActionKind.QuickFix,
+		vscode.CodeActionKind.QuickFix
 	];
 
 	sourceHighlight: SourceHighlighting;
@@ -13,7 +13,7 @@ export class CodeActions implements vscode.CodeActionProvider {
 		this.sourceHighlight = sourceHighlight;
 	}
 
-	public provideCodeActions(document: vscode.TextDocument, range: vscode.Range, context: vscode.CodeActionContext, token: vscode.CancellationToken): vscode.CodeAction[] | undefined {
+	provideCodeActions(document: vscode.TextDocument, range: vscode.Range, context: vscode.CodeActionContext, token: vscode.CancellationToken): vscode.CodeAction[] | undefined {
 		return context.diagnostics
 		.filter(diagnostic => diagnostic.source === "DiscoPoP for VSCode")
 		.map(diagnostic => this.createFix(document, range, diagnostic));

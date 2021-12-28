@@ -2,7 +2,7 @@
 	"name": "discopopvsc",
 	"displayName": "DiscoPoP for VSCode",
 	"description": "VSCode extension for DiscoPoP",
-	"version": "0.4.0",
+	"version": "1.1.0",
 	"engines": {
 		"vscode": "^1.50.0"
 	},
@@ -20,10 +20,6 @@
 	"main": "./out/extension.js",
 	"contributes": {
 		"commands": [
-			{
-				"command": "discopopvsc.helloWorld",
-				"title": "DiscoPoP: Hello World"
-			},
 			{
 				"command": "discopopvsc.fmap",
 				"title": "DiscoPoP: File Mapping"
@@ -93,10 +89,15 @@
 					"default": true,
 					"description": "Determines whether loop heatmaps will be shown"
 				},
+				"discopopvsc.patternHighlights": {
+					"type": "boolean",
+					"default": true,
+					"description": "Determines whether pattern highlights will be shown"
+				},
 				"discopopvsc.autoPipeline": {
 					"type": "boolean",
 					"default": true,
-					"description": "Run the entire pipeline after selecting files?"
+					"description": "Run the entire pipeline after selecting files"
 				},
 				"discopopvsc.autoFilemapping": {
 					"type": "boolean",
@@ -107,6 +108,21 @@
 					"type": "boolean",
 					"default": false,
 					"description": "List all files in the file selection"
+				},
+				"discopopvsc.lowHeatmapMin": {
+					"type": "number",
+					"default": 0,
+					"description": "The minimum iterations for a low ranking heatmap"
+				},
+				"discopopvsc.midHeatmapMin": {
+					"type": "number",
+					"default": 100,
+					"description": "The minimum iterations for a mid ranking heatmap"
+				},
+				"discopopvsc.highHeatmapMin": {
+					"type": "number",
+					"default": 1000,
+					"description": "The minimum iterations for a high ranking heatmap"
 				}
 			}
 		}

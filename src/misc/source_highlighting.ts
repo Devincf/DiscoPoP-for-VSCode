@@ -15,8 +15,6 @@ export class SourceHighlighting {
     //highlights: Map<string, Highlight[] | undefined> = new Map<string, Highlight[] | undefined>();
     //heatmaps: Map<string, Heatmap[] | undefined> = new Map<string, Heatmap[] | undefined>();
 
-    decorationTypes: Map<number, vscode.TextEditorDecorationType> = new Map<number, vscode.TextEditorDecorationType>();
-
     timeout: NodeJS.Timer | undefined = undefined;
 
     oldText: string = "";
@@ -36,6 +34,10 @@ export class SourceHighlighting {
             this.triggerUpdateDecorations();
         }
 
+        vscode.languages.onDidChangeDiagnostics((e) => {
+            console.log("asd");
+        });
+
         vscode.window.onDidChangeActiveTextEditor(editor => {
             activeEditor = editor;
             if (editor) {
@@ -53,119 +55,122 @@ export class SourceHighlighting {
 
     loadDataFromMakefileContent(value: File, key: number, forceReload?: boolean) {
         //load patterns.json
-        if (fs.existsSync(`${this.discopopView?.folderPath}/discopop-tmp/patterns.json`)) {
-            fs.readFile(`${this.discopopView?.folderPath}/discopop-tmp/patterns.json`, (err, data) => {
-                if (err) {
-                    throw err;
-                }
 
-                var obj = JSON.parse(data.toString());
-                //value.removeAllHighlights();
-                value.removeAllMeta();
-                obj.reduction.forEach((element: any) => {
-                    if (element.node_id.startsWith(key.toString())) {
-                        //console.log(element);
-                        value.addHighlight({
-                            startLine: parseInt(element.start_line.split(':')[1]),
-                            endLine: parseInt(element.end_line.split(':')[1]),
-                            startIndex: 0,
-                            endIndex: 1000,
-                            active: true,
-                            type: 'reduction',
-                            decorationType: Decorations.DO_ALL,
-                            diagnosticText: 'Insert reduction pragma',
-                            text: 'Reduction',
-                            data: element,
-                        });
-                        //value.addHighlight(new Highlight(parseInt(element.start_line.split(':')[1]) - 1, 0, parseInt(element.end_line.split(':')[1]) - 1, 1000, 'Do All Reduction'));
+        if (!FileManager.hasData() || forceReload) {
+            if (fs.existsSync(`${this.discopopView?.folderPath}/discopop-tmp/patterns.json`)) {
+                fs.readFile(`${this.discopopView?.folderPath}/discopop-tmp/patterns.json`, (err, data) => {
+                    if (err) {
+                        throw err;
                     }
+
+                    var obj = JSON.parse(data.toString());
+                    //value.removeAllHighlights();
+                    value.removeAllMeta();
+                    obj.reduction.forEach((element: any) => {
+                        if (element.node_id.startsWith(key.toString())) {
+                            //console.log(element);
+                            value.addHighlight({
+                                startLine: parseInt(element.start_line.split(':')[1]),
+                                endLine: parseInt(element.end_line.split(':')[1]),
+                                startIndex: 0,
+                                endIndex: 1000,
+                                active: true,
+                                type: 'reduction',
+                                decorationType: Decorations.DO_ALL,
+                                diagnosticText: 'Insert reduction pragma',
+                                text: 'Reduction',
+                                data: element,
+                            });
+                            //value.addHighlight(new Highlight(parseInt(element.start_line.split(':')[1]) - 1, 0, parseInt(element.end_line.split(':')[1]) - 1, 1000, 'Do All Reduction'));
+                        }
+                    });
+                    obj.do_all.forEach((element: any) => {
+                        if (element.node_id.startsWith(key.toString())) {
+                            //console.log(element);
+                            value.addHighlight({
+                                startLine: parseInt(element.start_line.split(':')[1]),
+                                endLine: parseInt(element.end_line.split(':')[1]),
+                                startIndex: 0,
+                                endIndex: 1000,
+                                active: true,
+                                type: 'do_all',
+                                decorationType: Decorations.DO_ALL,
+                                diagnosticText: 'Insert do_all pragma',
+                                text: 'Do All Reduction',
+                                data: element,
+                            });
+                        }
+                        //discopopView.sourceHighlighting.reload();
+                    });
+                    obj.pipeline.forEach((element: any) => {
+                        if (element.node_id.startsWith(key.toString())) {
+                            //console.log(element);
+                            value.addHighlight({
+                                startLine: parseInt(element.start_line.split(':')[1]),
+                                endLine: parseInt(element.end_line.split(':')[1]),
+                                startIndex: 0,
+                                endIndex: 1000,
+                                active: true,
+                                type: 'pipeline',
+                                decorationType: Decorations.DO_ALL,
+                                diagnosticText: 'Insert pipeline stages',
+                                text: 'Pipeline',
+                                data: element,
+                            });
+                            //value.addHighlight(new Highlight(parseInt(element.start_line.split(':')[1]) - 1, 0, parseInt(element.end_line.split(':')[1]) - 1, 1000, 'Do All Reduction'));
+                        }
+                        //discopopView.sourceHighlighting.reload();
+                    });
+                    obj.geometric_decomposition.forEach((element: any) => {
+                        if (element.node_id.startsWith(key.toString())) {
+                            //console.log(element);
+                            value.addHighlight({
+                                startLine: parseInt(element.start_line.split(':')[1]),
+                                endLine: parseInt(element.end_line.split(':')[1]),
+                                startIndex: 0,
+                                endIndex: 1000,
+                                active: true,
+                                type: 'geometric_decomposition',
+                                decorationType: Decorations.DO_ALL,
+                                diagnosticText: 'Insert geometric decomposition pragma',
+                                text: 'Geometric Decomposition',
+                                data: element,
+                            });
+                            //value.addHighlight(new Highlight(parseInt(element.start_line.split(':')[1]) - 1, 0, parseInt(element.end_line.split(':')[1]) - 1, 1000, 'Do All Reduction'));
+                        }
+                        //discopopView.sourceHighlighting.reload();
+                    });
                 });
-                obj.do_all.forEach((element: any) => {
-                    if (element.node_id.startsWith(key.toString())) {
-                        //console.log(element);
-                        value.addHighlight({
-                            startLine: parseInt(element.start_line.split(':')[1]),
-                            endLine: parseInt(element.end_line.split(':')[1]),
-                            startIndex: 0,
-                            endIndex: 1000,
-                            active: true,
-                            type: 'do_all',
-                            decorationType: Decorations.DO_ALL,
-                            diagnosticText: 'Insert do_all pragma',
-                            text: 'Do All Reduction',
-                            data: element,
-                        });
+            }
+
+            //load heatmaps
+            if (fs.existsSync(`${this.discopopView?.folderPath}/loop_counter_output.txt`)) {
+                fs.readFile(`${this.discopopView?.folderPath}/loop_counter_output.txt`, (err, data) => {
+                    if (err) {
+                        throw err;
                     }
-                    //discopopView.sourceHighlighting.reload();
+
+                    const dataxml = fs.readFileSync(`${this.discopopView?.folderPath}/Data.xml`).toString();
+
+                    const loops = data.toString().split('\n').slice(0, -1);
+                    value.removeAllHeatmaps();
+                    loops.forEach((loop: string) => {
+                        const loopCounter = loop.split(' ');
+                        const startLine = parseInt(loopCounter[1]);
+                        const amount = parseInt(loopCounter[2]);
+
+                        //find loop End in data.xml
+                        const regexStr = `\<Node id="${key}:(.*)" type="2" name="(.*)" startsAtLine = "(.*):${startLine}" endsAtLine = "(.*):(.*)"`;
+                        let regExp = new RegExp(regexStr);
+                        const a = dataxml.match(regExp);
+                        if (a) {
+                            const lineEnd = parseInt(a![5]!);
+
+                            value.addLoopHeatmap(new Heatmap(startLine, lineEnd, amount));
+                        }
+                    });
                 });
-                obj.pipeline.forEach((element: any) => {
-                    if (element.node_id.startsWith(key.toString())) {
-                        //console.log(element);
-                        value.addHighlight({
-                            startLine: parseInt(element.start_line.split(':')[1]),
-                            endLine: parseInt(element.end_line.split(':')[1]),
-                            startIndex: 0,
-                            endIndex: 1000,
-                            active: true,
-                            type: 'pipeline',
-                            decorationType: Decorations.DO_ALL,
-                            diagnosticText: 'Insert pipeline stages',
-                            text: 'Pipeline',
-                            data: element,
-                        });
-                        //value.addHighlight(new Highlight(parseInt(element.start_line.split(':')[1]) - 1, 0, parseInt(element.end_line.split(':')[1]) - 1, 1000, 'Do All Reduction'));
-                    }
-                    //discopopView.sourceHighlighting.reload();
-                });
-                obj.geometric_decomposition.forEach((element: any) => {
-                    if (element.node_id.startsWith(key.toString())) {
-                        //console.log(element);
-                        value.addHighlight({
-                            startLine: parseInt(element.start_line.split(':')[1]),
-                            endLine: parseInt(element.end_line.split(':')[1]),
-                            startIndex: 0,
-                            endIndex: 1000,
-                            active: true,
-                            type: 'geometric_decomposition',
-                            decorationType: Decorations.DO_ALL,
-                            diagnosticText: 'Insert geometric decomposition pragma',
-                            text: 'Geometric Decomposition',
-                            data: element,
-                        });
-                        //value.addHighlight(new Highlight(parseInt(element.start_line.split(':')[1]) - 1, 0, parseInt(element.end_line.split(':')[1]) - 1, 1000, 'Do All Reduction'));
-                    }
-                    //discopopView.sourceHighlighting.reload();
-                });
-            });
-        }
-
-        //load heatmaps
-        if (fs.existsSync(`${this.discopopView?.folderPath}/loop_counter_output.txt`)) {
-            fs.readFile(`${this.discopopView?.folderPath}/loop_counter_output.txt`, (err, data) => {
-                if (err) {
-                    throw err;
-                }
-
-                const dataxml = fs.readFileSync(`${this.discopopView?.folderPath}/Data.xml`).toString();
-
-                const loops = data.toString().split('\n').slice(0, -1);
-                value.removeAllHeatmaps();
-                loops.forEach((loop: string) => {
-                    const loopCounter = loop.split(' ');
-                    const startLine = parseInt(loopCounter[1]);
-                    const amount = parseInt(loopCounter[2]);
-
-                    //find loop End in data.xml
-                    const regexStr = `\<Node id="${key}:(.*)" type="2" name="(.*)" startsAtLine = "(.*):${startLine}" endsAtLine = "(.*):(.*)"`;
-                    let regExp = new RegExp(regexStr);
-                    const a = dataxml.match(regExp);
-                    if (a) {
-                        const lineEnd = parseInt(a![5]!);
-
-                        value.addLoopHeatmap(new Heatmap(startLine, lineEnd, amount));
-                    }
-                });
-            });
+            }
         }
     }
 
@@ -177,7 +182,7 @@ export class SourceHighlighting {
             }
         }
 
-        if (!FileManager.hasData()) {
+        if (!FileManager.hasData() || forceReload) {
             if (fs.existsSync(`${this.discopopView?.folderPath}/discopop-tmp/${key}/patterns.json`)) {
                 fs.readFile(`${this.discopopView?.folderPath}/discopop-tmp/${key}/patterns.json`, (err, data) => {
                     if (err) {
@@ -348,6 +353,7 @@ export class SourceHighlighting {
         return diagnostic;
     }
 
+    //indexes function found on https://stackoverflow.com/a/3410547
     indexes(source: string, find: string) {
         if (!source) {
             return [];
@@ -527,7 +533,7 @@ export class SourceHighlighting {
         }*/
         const file = FileManager.getFileFromName(fileName);
         if (file) {
-
+            if(vscode.workspace.getConfiguration("discopopvsc").get("patternHighlights"))
             {
                 let decorationMap = new Map<string, vscode.DecorationOptions[]>([["reduction", []], ["do_all", []], ["pipeline", []], ["geometric_decomposition", []]]);
                 file.patterns.forEach((pattern) => {
@@ -549,7 +555,7 @@ export class SourceHighlighting {
                     //console.log("Adding Heatmap");
                     if (heatmap.active) {
                         const heatmapLevel = this.getHeatmapLevelFromAmount(heatmap.level);
-                        const decoration = { range: new vscode.Range(new vscode.Position(heatmap.startLine - 1, 0), new vscode.Position(heatmap.endLine-1, 1000)), hoverMessage: "Loop executed: " + heatmap.level + " times" };
+                        const decoration = { range: new vscode.Range(new vscode.Position(heatmap.startLine - 1, 0), new vscode.Position(heatmap.endLine - 1, 1000)), hoverMessage: "Loop executed: " + heatmap.level + " times" };
                         decorationsArray[heatmapLevel].push(decoration);
                     }
                 });
@@ -566,11 +572,14 @@ export class SourceHighlighting {
     }
 
     getHeatmapLevelFromAmount(level: number) {
-        if (level > 0 && level <= 10) {
+        const low = vscode.workspace.getConfiguration("discopopvsc").get<number>("lowHeatmapMin")??0;
+        const mid = vscode.workspace.getConfiguration("discopopvsc").get<number>("midHeatmapMin")??100;
+        const high = vscode.workspace.getConfiguration("discopopvsc").get<number>("highHeatmapMin")??1000;
+        if (level >= low && level < mid) {
             return 0;
-        } else if (level > 10 && level <= 30) {
+        } else if (level >= mid && level < high) {
             return 1;
-        } else if (level > 30) {
+        } else if (level >= high) {
             return 2;
         }
         return -1;

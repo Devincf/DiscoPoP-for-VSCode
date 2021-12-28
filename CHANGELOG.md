@@ -42,3 +42,6 @@ Minor fix
 - Added auto code insertion for all potential parallelism highlights.
 - Fixed a bug where you could only run tasks on 1 file
 - Fixed a bug where the extension would sometimes not load properly
+
+## 1.0.0
+- to be added
